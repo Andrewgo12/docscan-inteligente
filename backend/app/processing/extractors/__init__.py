@@ -1,0 +1,4 @@
+from backend.app.processing.extractors.text_extractor import TextExtractor
+from backend.app.processing.extractors.image_extractor import ImageExtractor
+from backend.app.processing.extractors.table_cell_extractor import TableCellExtractor
+from backend.app.processing.extractors.field_template_extractor import FieldTemplateExtractor
