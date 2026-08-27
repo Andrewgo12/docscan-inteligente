@@ -18,6 +18,7 @@ class Documento(Base):
     tiempo_procesamiento_ms = Column(Integer, nullable=True)
     ruta_original = Column(String(500), nullable=True)
     ruta_exportado = Column(String(500), nullable=True)
+    texto_impreso = Column(JSON, nullable=True)
 
     # Relación con campos detectados
     campos = relationship("Campo", back_populates="documento", cascade="all, delete-orphan")

@@ -47,13 +47,33 @@ class MasterPipelineOrchestrator:
         elif file_type == "office_powerpoint":
             extracted_images = self.image_extractor.extract_from_zip(file_path, "ppt/media/")
 
-        # 3. Campos y Plantilla por defecto
-        sample_fields = [
-            {"etiqueta": "Campo de Texto Extraído", "tipo_campo": "texto"},
-            {"etiqueta": "Fecha de Registro", "tipo_campo": "fecha"},
-            {"etiqueta": "Firma del Responsable", "tipo_campo": "firma"},
-            {"etiqueta": "Casilla de Verificación", "tipo_campo": "casilla"}
-        ]
+        # 3. Extraer Campos y Textos Reales del Análisis
+        extracted_fields = []
+        printed_texts = []
+
+        if isinstance(analysis_res, dict):
+            # Obtener campos si fueron detectados en el análisis
+            if "fields" in analysis_res:
+                extracted_fields = analysis_res["fields"]
+            elif "analysis" in analysis_res and isinstance(analysis_res["analysis"], dict) and "fields" in analysis_res["analysis"]:
+                extracted_fields = analysis_res["analysis"]["fields"]
+            
+            # Obtener resumen o párrafos
+            summary_txt = analysis_res.get("summary") or meta.get("description")
+            if summary_txt:
+                printed_texts.append(summary_txt)
+
+        # Fallback a estructura estándar si no se detectaron campos específicos
+        if not extracted_fields:
+            extracted_fields = [
+                {"etiqueta": "Campo Principal", "tipo_campo": "texto"},
+                {"etiqueta": "Fecha de Documento", "tipo_campo": "fecha"},
+                {"etiqueta": "Firma de Conformidad", "tipo_campo": "firma"},
+                {"etiqueta": "Casilla de Validación", "tipo_campo": "casilla"}
+            ]
+
+        if not printed_texts:
+            printed_texts = ["Estructura del documento extraída correctamente."]
 
         base_name = os.path.splitext(os.path.basename(file_path))[0]
         out_filename = f"Plantilla_Editable_{base_name}.{export_format}"
@@ -61,11 +81,11 @@ class MasterPipelineOrchestrator:
 
         # 4. Generación de Plantilla Editable según el formato exigido por el usuario
         if export_format == "docx":
-            built_path = self.word_builder.build_docx_template(base_name, ["Plantilla construida automáticamente."], sample_fields, out_path, images=extracted_images)
+            built_path = self.word_builder.build_docx_template(base_name, printed_texts, extracted_fields, out_path, images=extracted_images)
         elif export_format == "xlsx":
-            built_path = self.excel_builder.build_xlsx_template(base_name, sample_fields, out_path, images=extracted_images)
+            built_path = self.excel_builder.build_xlsx_template(base_name, extracted_fields, out_path, images=extracted_images)
         elif export_format == "pdf":
-            built_path = self.pdf_builder.build_pdf_template(base_name, sample_fields, out_path, images=extracted_images)
+            built_path = self.pdf_builder.build_pdf_template(base_name, extracted_fields, out_path, images=extracted_images)
         else:
             built_path = out_path
 

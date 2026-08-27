@@ -32,6 +32,7 @@ class DocumentoResponse(DocumentoBase):
     id: str
     fecha_procesamiento: datetime
     tiempo_procesamiento_ms: Optional[int] = None
+    texto_impreso: Optional[List[str]] = None
     campos: List[CampoResponse] = []
 
     class Config:

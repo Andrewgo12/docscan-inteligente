@@ -170,6 +170,7 @@ async def process_document(
 
     elapsed_ms = int((time.time() - start_time) * 1000)
     doc.tiempo_procesamiento_ms = elapsed_ms
+    doc.texto_impreso = ocr_res.get("printed_lines", [])
     db.commit()
     db.refresh(doc)
 
@@ -222,12 +223,14 @@ async def export_document(
         for c in doc.campos
     ]
 
+    printed_texts = doc.texto_impreso if (doc.texto_impreso and len(doc.texto_impreso) > 0) else ["Formulario Digitalizado"]
+
     safe_export_name = sanitize_filename(doc.nombre_archivo)
     out_filename = f"{doc_id}_export.{format_type}"
     out_path = os.path.join(EXPORT_DIR, out_filename)
 
     if format_type.lower() == "docx":
-        docx_exporter.export_to_file(doc.nombre_archivo, ["Formulario Digitalizado"], fields, out_path)
+        docx_exporter.export_to_file(doc.nombre_archivo, printed_texts, fields, out_path)
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     elif format_type.lower() == "xlsx":
         xlsx_exporter.export_to_file(doc.nombre_archivo, fields, out_path)
