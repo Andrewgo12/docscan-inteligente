@@ -21,27 +21,197 @@ const formats = [
   { kind: 'JPG' as Kind, label: 'Imagen / escaneo', detail: 'OCR, sellos, firmas y zonas visuales', icon: FileImage },
 ];
 
-const tutorial = [
-  ['Bienvenida', 'Entiende qué vas a construir y cómo DocScan conserva el documento original.'],
-  ['Modo de trabajo', 'Elige análisis automático para avanzar rápido o modo manual para controlar cada detalle.'],
-  ['Formato', 'Selecciona PDF, Word, Excel, PowerPoint o imagen: la estrategia de construcción cambia según el archivo.'],
-  ['Carga segura', 'Sube el archivo, valida su extensión y tamaño, y conserva una copia intacta como referencia.'],
-  ['Lectura original', 'Revisa cada página, hoja o diapositiva antes de indicar cualquier cambio.'],
-  ['Renderizado fiel', 'El sistema reconstruye la apariencia: tipografías, posiciones, tablas, imágenes, enlaces y señales.'],
-  ['Análisis estructural', 'Identifica texto, bloques, tablas, imágenes, adjuntos, vínculos, códigos y elementos repetidos.'],
-  ['Resumen', 'Obtén una síntesis del documento para entender su propósito y orientar los campos.'],
-  ['Sugerencias IA', 'Revisa las zonas que la IA propone y acepta, corrige o descarta cada sugerencia.'],
-  ['Dibujo de zona', 'Mantén el mouse presionado y dibuja un rectángulo exactamente donde debe existir un espacio.'],
-  ['Ajuste preciso', 'Mueve, redimensiona y alinea la zona para que coincida con el área real del documento.'],
-  ['Instrucción libre', 'Describe con tus propias palabras qué debe aparecer, sin estar limitado a tipos predefinidos.'],
-  ['Tipo de elemento', 'Marca texto, fecha, firma, hora, casilla, imagen, archivo, hipervínculo, sello, código, tabla, señal, cálculo u otro.'],
-  ['Comentarios', 'Añade ejemplos, reglas, instrucciones y contexto para que cualquier persona sepa cómo completar el campo.'],
-  ['Baja confianza', 'Responde preguntas puntuales de la IA cuando una región pueda interpretarse de varias formas.'],
-  ['Comparación', 'Alterna entre original y plantilla para confirmar que ningún elemento no seleccionado fue alterado.'],
-  ['Salida', 'Elige DOCX, XLSX o PDF y revisa qué capacidades editables ofrece cada construcción.'],
-  ['Firmas', 'Configura firma manuscrita con mouse/touch o una firma tipográfica digital para campos especiales.'],
-  ['Generación', 'Procesa las zonas marcadas y reemplaza únicamente los espacios indicados por controles editables.'],
-  ['Descarga y edición', 'Descarga, comparte o vuelve a editar una plantilla que permanece ajustable según tus necesidades.'],
+export interface StepDetail {
+  title: string;
+  summary: string;
+  whatHappens: string;
+  input: string;
+  action: string;
+  output: string;
+  resultText: string;
+}
+
+const tutorialSteps: StepDetail[] = [
+  {
+    title: 'Bienvenida',
+    summary: 'Entiende qué vas a construir y cómo DocScan conserva el documento original.',
+    whatHappens: 'El sistema inicializa la sesión de digitalización conservando el documento fuente intacto sin alterar su estructura.',
+    input: 'Documento original',
+    action: 'Selección del archivo',
+    output: 'Copia de trabajo aislada',
+    resultText: 'Documento cargado en espacio aislado listo para verificación.'
+  },
+  {
+    title: 'Modo de trabajo',
+    summary: 'Elige análisis automático para avanzar rápido o modo manual para controlar cada detalle.',
+    whatHappens: 'El usuario decide entre el pipeline automático asistido por visión por computador o la edición manual precisa página por página.',
+    input: 'Preferencia del usuario',
+    action: 'Selección Automático / Manual',
+    output: 'Flujo de trabajo personalizado',
+    resultText: 'Configuración del nivel de intervención humana (Human-in-the-loop).'
+  },
+  {
+    title: 'Formato',
+    summary: 'Selecciona PDF, Word, Excel, PowerPoint o imagen: la estrategia de construcción cambia según el archivo.',
+    whatHappens: 'DocScan analiza los Magic Bytes del archivo para determinar la estrategia de extracción adecuada según sea Word, Excel, PowerPoint, PDF o Imagen.',
+    input: 'PDF, DOCX, XLSX, PPTX o Imagen',
+    action: 'Detección de tipo MIME',
+    output: 'Extractor específico asignado',
+    resultText: 'Estrategia de renderizado adaptada exactamente a la estructura del archivo.'
+  },
+  {
+    title: 'Carga segura',
+    summary: 'Sube el archivo, valida su extensión y tamaño, y conserva una copia intacta como referencia.',
+    whatHappens: 'Se valida la integridad binaria del archivo, tamaño (máx 25 MB) y firma SHA-256 para evitar corrupción o errores.',
+    input: 'Archivo local',
+    action: 'Hash SHA-256 & Validación',
+    output: 'Registro seguro en servidor',
+    resultText: 'Documento verificado e inmune a alteraciones no autorizadas.'
+  },
+  {
+    title: 'Lectura original',
+    summary: 'Revisa cada página, hoja o diapositiva antes de indicar cualquier cambio.',
+    whatHappens: 'Muestra una vista previa del contenido extraído para que el usuario verifique visualmente que es el documento correcto antes de cualquier modificación.',
+    input: 'Archivo registrado',
+    action: 'Renderizado de lectura previa',
+    output: 'Confirmación del usuario',
+    resultText: 'Lectura previa verificable con texto y estructura legibles.'
+  },
+  {
+    title: 'Renderizado fiel',
+    summary: 'El sistema reconstruye la apariencia: tipografías, posiciones, tablas, imágenes, enlaces y señales.',
+    whatHappens: 'Reconstruye la apariencia del documento preservando fuentes, márgenes, tablas, imágenes y logotipos en su posición original.',
+    input: 'Metadatos y geometría',
+    action: 'Reconstrucción visual',
+    output: 'Lienzo fiel al impreso',
+    resultText: 'Apariencia visual equivalente al documento original.'
+  },
+  {
+    title: 'Análisis estructural',
+    summary: 'Identifica texto, bloques, tablas, imágenes, adjuntos, vínculos, códigos y elementos repetidos.',
+    whatHappens: 'El motor OCR y visión artificial fragmentan el documento en bloques de texto impreso, tablas, encabezados, sellos y firmas.',
+    input: 'Páginas del documento',
+    action: 'Segmentación de bloques OCR',
+    output: 'Mapa de coordenadas (bounding boxes)',
+    resultText: 'Estructura interna totalmente identificada y clasificada.'
+  },
+  {
+    title: 'Resumen',
+    summary: 'Obtén una síntesis del documento para entender su propósito y orientar los campos.',
+    whatHappens: 'La IA sintetiza el propósito general del documento y sugiere los campos clave requeridos para completar el formulario.',
+    input: 'Texto completo extraído',
+    action: 'Síntesis semántica',
+    output: 'Resumen y sugerencia de campos',
+    resultText: 'Comprensión instantánea del objetivo del formulario.'
+  },
+  {
+    title: 'Sugerencias IA',
+    summary: 'Revisa las zonas que la IA propone y acepta, corrige o descarta cada sugerencia.',
+    whatHappens: 'El sistema propone recuadros automáticos sobre las líneas en blanco, fechas, firmas y casillas detectadas para su aprobación.',
+    input: 'Mapa de bloques OCR',
+    action: 'Propuestas automáticas de zonas',
+    output: 'Zonas sugeridas resaltadas',
+    resultText: 'Aprobación rápida con 1-clic de sugerencias de la IA.'
+  },
+  {
+    title: 'Dibujo de zona',
+    summary: 'Mantén el mouse presionado y dibuja un rectángulo exactamente donde debe existir un espacio.',
+    whatHappens: 'El usuario arrastra el cursor del ratón sobre el lienzo para marcar manualmente cualquier recuadro editable o texto estático.',
+    input: 'Arrastre de ratón (Drag-to-Draw)',
+    action: 'Delimitación de coordenadas',
+    output: 'Nueva zona creada (x, y, w, h)',
+    resultText: 'Zona delimitada exactamente en las dimensiones indicadas.'
+  },
+  {
+    title: 'Ajuste preciso',
+    summary: 'Mueve, redimensiona y alinea la zona para que coincida con el área real del documento.',
+    whatHappens: 'Se pueden mover, cambiar de tamaño o realinear las zonas marcadas para encajarlas perfectamente sobre el impreso.',
+    input: 'Zona seleccionada',
+    action: 'Ajuste de coordenadas y bordes',
+    output: 'Alineación milimétrica',
+    resultText: 'Recuadro alineado con los márgenes del formulario.'
+  },
+  {
+    title: 'Instrucción libre',
+    summary: 'Describe con tus propias palabras qué debe aparecer, sin estar limitado a tipos predefinidos.',
+    whatHappens: 'Permite ingresar descripciones personalizadas en lenguaje natural sobre el comportamiento deseado para esa zona.',
+    input: 'Comentarios / Notas del usuario',
+    action: 'Asignación de reglas de negocio',
+    output: 'Instrucción de campo vinculada',
+    resultText: 'Reglas y restricciones de diligenciamiento registradas.'
+  },
+  {
+    title: 'Tipo de elemento',
+    summary: 'Marca texto, fecha, firma, hora, casilla, imagen, archivo, hipervínculo, sello, código, tabla, señal, cálculo u otro.',
+    whatHappens: 'Clasificación de la zona entre Editable (Texto, Fecha, Firma, Casilla) o Texto Estático Impreso (No Editable).',
+    input: 'Selector de tipo de campo',
+    action: 'Asignación de categoría',
+    output: 'Control de entrada configurado',
+    resultText: 'Comportamiento del control asignado según su tipo.'
+  },
+  {
+    title: 'Comentarios',
+    summary: 'Añade ejemplos, reglas, instrucciones y contexto para que cualquier persona sepa cómo completar el campo.',
+    whatHappens: 'Se agregan notas explicativas y ejemplos para guiar a la persona que completará el formulario final.',
+    input: 'Texto de ayuda / Tooltip',
+    action: 'Asociación de ayuda al usuario',
+    output: 'Guía interactiva de campo',
+    resultText: 'Ayuda contextual visible al posicionar el cursor sobre el campo.'
+  },
+  {
+    title: 'Baja confianza',
+    summary: 'Responde preguntas puntuales de la IA cuando una región pueda interpretarse de varias formas.',
+    whatHappens: 'Si la IA detecta incertidumbre en una región, presenta una tarjeta interactiva preguntando al usuario por la clasificación correcta.',
+    input: 'Zona con confianza < 80%',
+    action: 'Consulta Human-in-the-Loop',
+    output: 'Confirmación definitiva del usuario',
+    resultText: 'Aclaración directa que elimina cualquier ambigüedad en la plantilla.'
+  },
+  {
+    title: 'Comparación',
+    summary: 'Alterna entre original y plantilla para confirmar que ningún elemento no seleccionado fue alterado.',
+    whatHappens: 'Permite alternar entre la vista del documento original y la nueva plantilla editable para verificar que ningún texto no seleccionado fue alterado.',
+    input: 'Lienzo original vs Plantilla',
+    action: 'Superposición y switch de vista',
+    output: 'Verificación de fidelidad 100%',
+    resultText: 'Garantía de preservación de todo el contenido estático impreso.'
+  },
+  {
+    title: 'Salida',
+    summary: 'Elige DOCX, XLSX o PDF y revisa qué capacidades editables ofrece cada construcción.',
+    whatHappens: 'El usuario elige entre exportar en Word (.docx), Excel (.xlsx) o PDF con formularios interactivos AcroForms.',
+    input: 'Formato de salida deseado',
+    action: 'Selección de motor de construcción',
+    output: 'Configuración de exportador',
+    resultText: 'Formato de destino listo para la generación final.'
+  },
+  {
+    title: 'Firmas',
+    summary: 'Configura firma manuscrita con mouse/touch o una firma tipográfica digital para campos especiales.',
+    whatHappens: 'Configuración del control de firma manuscrita (trazado con ratón/touch) o firma tipográfica digital.',
+    input: 'Recuadro de firma',
+    action: 'Asignación de lienzo de firma',
+    output: 'Control de captura de firma activa',
+    resultText: 'Campo de firma preparado para autenticación manuscrita.'
+  },
+  {
+    title: 'Generación',
+    summary: 'Procesa las zonas marcadas y reemplaza únicamente los espacios indicados por controles editables.',
+    whatHappens: 'El servidor backend compila la plantilla reemplazando únicamente las zonas marcadas por controles editables y preservando el resto del archivo.',
+    input: 'Matriz de campos + Original',
+    action: 'Compilación en backend Python',
+    output: 'Archivo ejecutable final',
+    resultText: 'Documento convertido en plantilla 100% editable.'
+  },
+  {
+    title: 'Descarga y edición',
+    summary: 'Descarga, comparte o vuelve a editar una plantilla que permanece ajustable según tus necesidades.',
+    whatHappens: 'Descarga directa del archivo procesado en `.docx`, `.xlsx` o `.pdf` listo para ser completado o compartido.',
+    input: 'Plantilla compilada',
+    action: 'Descarga desde la API REST',
+    output: 'Plantilla final entregada',
+    resultText: 'Plantilla descargada y disponible para uso inmediato.'
+  }
 ];
 
 export function DocscanApp() {
@@ -265,7 +435,7 @@ function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; 
 }
 
 function How({ start, back, step, setStep }: { start: () => void; back: () => void; step: number; setStep: (n: number) => void }) {
-  const current = tutorial[step];
+  const current = tutorialSteps[step] || tutorialSteps[0];
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <button onClick={back} className="text-sm text-slate-400 hover:text-white mb-6">
@@ -275,14 +445,14 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 max-h-[700px] overflow-y-auto">
           <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Guía completa</p>
-          <p className="mt-2 text-sm text-slate-400">{step + 1} de {tutorial.length} etapas</p>
+          <p className="mt-2 text-sm text-slate-400">{step + 1} de {tutorialSteps.length} etapas</p>
           <div className="mt-5 space-y-1">
-            {tutorial.map(([title], i) => (
+            {tutorialSteps.map((item, i) => (
               <button
-                key={title}
+                key={item.title}
                 onClick={() => setStep(i)}
                 className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs ${
-                  i === step ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/50'
+                  i === step ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/50'
                 }`}
               >
                 <span
@@ -292,7 +462,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                 >
                   {i < step ? <Check size={11} /> : i + 1}
                 </span>
-                {title}
+                {item.title}
               </button>
             ))}
           </div>
@@ -302,7 +472,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Cómo funciona · paso {step + 1}</p>
-              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">{current[0]}</h1>
+              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">{current.title}</h1>
             </div>
             <div className="hidden gap-1 sm:flex">
               {[0, 1, 2, 3, 4].map((i) => (
@@ -321,24 +491,26 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                   <span className="flex size-11 items-center justify-center rounded-lg bg-slate-800 text-indigo-400">
                     <Sparkles size={20} />
                   </span>
-                  <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">{current[1]}</p>
+                  <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-200">{current.summary}</p>
+                  
+                  {/* DYNAMIC WHAT HAPPENS BOX */}
                   <div className="mt-7 rounded-lg border border-slate-800 bg-slate-950 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Qué ocurre</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Qué ocurre en esta etapa</p>
                     <p className="mt-3 text-sm leading-6 text-slate-300">
-                      DocScan conserva el original como referencia y crea una capa de trabajo separada. Tus instrucciones se aplican únicamente a la región seleccionada.
+                      {current.whatHappens}
                     </p>
                     <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-md border border-slate-800 p-3">
+                      <div className="rounded-md border border-slate-800 bg-slate-900 p-3">
                         <p className="text-xs text-slate-400">Entrada</p>
-                        <p className="mt-1 text-sm text-white">Archivo original</p>
+                        <p className="mt-1 text-sm font-medium text-white">{current.input}</p>
                       </div>
-                      <div className="rounded-md border border-indigo-500/50 p-3">
+                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-3">
                         <p className="text-xs text-indigo-400">Acción</p>
-                        <p className="mt-1 text-sm text-white">Tu indicación</p>
+                        <p className="mt-1 text-sm font-medium text-white">{current.action}</p>
                       </div>
-                      <div className="rounded-md border border-emerald-500/50 p-3">
+                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3">
                         <p className="text-xs text-emerald-400">Resultado</p>
-                        <p className="mt-1 text-sm text-white">Zona editable</p>
+                        <p className="mt-1 text-sm font-medium text-white">{current.output}</p>
                       </div>
                     </div>
                   </div>
@@ -348,21 +520,21 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                   <button
                     disabled={step === 0}
                     onClick={() => setStep(step - 1)}
-                    className="rounded-md border border-slate-800 px-3 py-2 text-sm text-slate-300 disabled:opacity-30"
+                    className="rounded-md border border-slate-800 px-3 py-2 text-sm text-slate-300 disabled:opacity-30 hover:bg-slate-800"
                   >
                     <ChevronLeft size={15} className="mr-1 inline" /> Anterior
                   </button>
-                  {step === tutorial.length - 1 ? (
+                  {step === tutorialSteps.length - 1 ? (
                     <button
                       onClick={start}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
                     >
                       Probar DocScan <ArrowRight size={15} className="ml-1 inline" />
                     </button>
                   ) : (
                     <button
                       onClick={() => setStep(step + 1)}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
                     >
                       Siguiente <ChevronRight size={15} className="ml-1 inline" />
                     </button>
@@ -371,26 +543,29 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
               </div>
             </div>
 
+            {/* DYNAMIC EXPECTED RESULT ASIDE */}
             <aside className="rounded-xl border border-slate-800 bg-slate-900 p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Resultado esperado</p>
               <div className="mt-5 rounded-md border border-slate-800 bg-slate-950 p-4">
                 <div className="h-2 w-28 rounded bg-slate-800" />
                 <div className="mt-5 space-y-3">
                   <div className="h-2 w-full rounded bg-slate-800" />
-                  <div className="h-8 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-xs text-indigo-300">
-                    Zona marcada
+                  <div className="h-8 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-xs text-indigo-300 font-medium truncate">
+                    {current.action}
                   </div>
-                  <div className="h-8 rounded border border-slate-800" />
-                  <div className="h-8 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-xs text-emerald-300">
-                    Impreso intacto
+                  <div className="h-8 rounded border border-slate-800 flex items-center px-2 text-xs text-slate-500 truncate">
+                    {current.input}
+                  </div>
+                  <div className="h-8 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-xs text-emerald-300 font-medium truncate">
+                    {current.output}
                   </div>
                 </div>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-400">
-                Una vista verificable, con el original intacto y las instrucciones listas para convertirse en campos editables.
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                {current.resultText}
               </p>
               <div className="mt-5 flex items-center gap-2 text-xs text-emerald-400">
-                <Check size={14} /> Sin alterar lo no seleccionado
+                <Check size={14} /> Sin alterar el documento impreso original
               </div>
             </aside>
           </div>
