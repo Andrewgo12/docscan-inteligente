@@ -24,6 +24,8 @@ export interface UniversalMetadata {
 export interface UniversalAnalysisResult {
   status?: string;
   filename?: string;
+  raw_text_snippet?: string;
+  printed_lines?: string[];
   metadata?: UniversalMetadata;
   analysis?: {
     summary?: string;

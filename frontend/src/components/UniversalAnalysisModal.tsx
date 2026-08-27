@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle2, ShieldCheck, FileText } from 'lucide-react';
 import type { UniversalAnalysisResult } from '../types/document';
 
 interface UniversalAnalysisModalProps {
@@ -15,6 +15,7 @@ export const UniversalAnalysisModal: React.FC<UniversalAnalysisModalProps> = ({
 
   const meta = result.metadata || {};
   const analysis = result.analysis || {};
+  const rawSnippet = result.raw_text_snippet || (result as any).printed_lines?.join('\n');
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -68,7 +69,18 @@ export const UniversalAnalysisModal: React.FC<UniversalAnalysisModalProps> = ({
             </p>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          {rawSnippet && (
+            <div>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <FileText size={15} /> Texto Real Extraído del Documento:
+              </h4>
+              <div style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#e2e8f0', background: 'rgba(9, 13, 22, 0.9)', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--theme-border)', maxHeight: '140px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                {rawSnippet}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.8rem' }}>
             <button className="btn btn-primary" onClick={onClose}>
               <CheckCircle2 size={16} /> Entendido
             </button>

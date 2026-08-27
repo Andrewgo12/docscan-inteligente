@@ -48,22 +48,18 @@ os.makedirs(EXPORT_DIR, exist_ok=True)
 
 
 def sanitize_filename(raw_filename: str) -> str:
-    """
-    Medida de Seguridad Industrial contra vulnerabilidades Path Traversal (CWE-22).
-    Asegura que el nombre de archivo no contenga secuencias '../../' ni rutas absolutas.
-    """
     clean_basename = os.path.basename(raw_filename)
     clean_basename = clean_basename.replace("..", "").replace("/", "").replace("\\", "")
     return clean_basename or "uploaded_document"
 
 
 @router.post("/universal-analyze")
+@router.post("/universal/analyze")
 async def universal_analyze_document(
     file: UploadFile = File(...),
 ):
     """
-    Endpoint Ingestor Universal: Recibe CUALQUIER tipo de archivo (PDF, JPG, PNG, DOCX, XLSX, PPTX, ZIP, EXE, TXT, CSV, etc.)
-    sin restricción de formato. Sanitiza nombres contra Path Traversal e identifica por firma binaria (Magic Bytes).
+    Endpoint Ingestor Universal: Recibe CUALQUIER tipo de archivo (PDF, JPG, PNG, DOCX, XLSX, PPTX, ZIP, EXE, TXT, CSV, etc.).
     """
     try:
         doc_id = str(uuid.uuid4())
@@ -127,32 +123,47 @@ async def process_document(
     doc_id: str,
     db: Session = Depends(get_db)
 ):
-    """Ejecuta el pipeline completo sin invención de datos ficticios."""
+    """Ejecuta el pipeline de procesamiento según el tipo de archivo (PDF, DOCX, XLSX, PPTX, Imagen)."""
     doc = db.query(Documento).filter(Documento.id == doc_id).first()
     if not doc or not doc.ruta_original:
         raise HTTPException(status_code=404, detail="Documento no encontrado.")
 
     start_time = time.time()
+    ext = os.path.splitext(doc.ruta_original)[1].lower()
 
-    with open(doc.ruta_original, "rb") as f:
-        image_bytes = f.read()
+    printed_lines: List[str] = []
+    classified_fields: List[dict] = []
 
-    # 1. Preprocesamiento de Imagen
-    prep_res = preprocessor.process_full_pipeline(image_bytes)
-    color_img = prep_res["processed_color"]
-    gray_img = prep_res["processed_gray"]
-    binary_img = prep_res["processed_binary"]
+    if ext in ['.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp']:
+        # Pipeline de Visión + OCR para Imágenes
+        with open(doc.ruta_original, "rb") as f:
+            image_bytes = f.read()
 
-    # 2. OCR Auténtico
-    ocr_res = ocr_engine.extract_all_text(color_img)
+        prep_res = preprocessor.process_full_pipeline(image_bytes)
+        color_img = prep_res["processed_color"]
+        gray_img = prep_res["processed_gray"]
+        binary_img = prep_res["processed_binary"]
 
-    # 3. Detección Geométrica
-    geometric_fields = field_detector.detect_all_fields(binary_img, gray_img)
+        ocr_res = ocr_engine.extract_all_text(color_img)
+        geometric_fields = field_detector.detect_all_fields(binary_img, gray_img)
 
-    # 4. Clasificación Semántica sin Alucinaciones
-    classified_fields = semantic_classifier.classify_and_associate_all(
-        geometric_fields, ocr_res["blocks"]
-    )
+        classified_fields = semantic_classifier.classify_and_associate_all(
+            geometric_fields, ocr_res["blocks"]
+        )
+        printed_lines = ocr_res.get("printed_lines", [])
+    else:
+        # Pipeline de Extracción Nativa (PDF, DOCX, XLSX, PPTX)
+        analysis_result = master_dispatcher.dispatch_and_analyze(doc.ruta_original)
+        printed_lines = analysis_result.get("printed_lines", [])
+        raw_fields = analysis_result.get("detected_fields", [])
+
+        for idx, f in enumerate(raw_fields):
+            classified_fields.append({
+                "etiqueta": f.get("etiqueta", f"Campo {idx + 1}"),
+                "tipo_campo": f.get("tipo_campo", "texto"),
+                "coordenadas": f.get("coordenadas", {"x": 20, "y": 30, "width": 40, "height": 8}),
+                "confianza_deteccion": f.get("confianza", 0.95)
+            })
 
     # Persistir campos reales en base de datos
     db.query(Campo).filter(Campo.documento_id == doc_id).delete()
@@ -170,7 +181,7 @@ async def process_document(
 
     elapsed_ms = int((time.time() - start_time) * 1000)
     doc.tiempo_procesamiento_ms = elapsed_ms
-    doc.texto_impreso = ocr_res.get("printed_lines", [])
+    doc.texto_impreso = printed_lines
     db.commit()
     db.refresh(doc)
 
@@ -225,7 +236,6 @@ async def export_document(
 
     printed_texts = doc.texto_impreso if (doc.texto_impreso and len(doc.texto_impreso) > 0) else ["Formulario Digitalizado"]
 
-    safe_export_name = sanitize_filename(doc.nombre_archivo)
     out_filename = f"{doc_id}_export.{format_type}"
     out_path = os.path.join(EXPORT_DIR, out_filename)
 
@@ -241,8 +251,4 @@ async def export_document(
     else:
         raise HTTPException(status_code=400, detail="Formato de exportación no soportado.")
 
-    doc.ruta_exportado = out_path
-    doc.formato_salida = format_type.lower()
-    db.commit()
-
-    return FileResponse(out_path, media_type=media_type, filename=f"{safe_export_name}.{format_type}")
+    return FileResponse(path=out_path, filename=f"Plantilla_{doc.nombre_archivo}.{format_type}", media_type=media_type)
