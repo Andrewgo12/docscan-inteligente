@@ -19,6 +19,7 @@ const initialZones: Zone[] = [
   { id: 1, label: 'Nombre completo del solicitante', type: 'Texto', note: 'Identificación del solicitante', page: 1, x: 18, y: 28, w: 31, h: 6 },
   { id: 2, label: 'Fecha de solicitud', type: 'Fecha', note: 'Día de diligenciamiento', page: 1, x: 61, y: 28, w: 20, h: 6 },
   { id: 3, label: 'Firma del responsable', type: 'Firma', note: 'Firma manuscrita requerida', page: 1, x: 52, y: 72, w: 30, h: 9 },
+  { id: 4, label: 'Observaciones anexas', type: 'Texto', note: 'Notas suplementarias página 2', page: 2, x: 18, y: 35, w: 60, h: 12 },
 ];
 
 interface DocscanWorkspaceProps {
@@ -39,6 +40,8 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
   const [notice, setNotice] = useState(false);
   const [sidebar, setSidebar] = useState(true);
   const [exportFormat, setExportFormat] = useState<'docx' | 'xlsx' | 'pdf'>('docx');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [resolvedAiPrompt, setResolvedAiPrompt] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const current = zones.find((zone) => zone.id === selected) ?? zones[0];
@@ -69,8 +72,8 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
           id: idx + 1,
           label: f.etiqueta || `Campo ${idx + 1}`,
           type: f.tipo_campo || 'Texto',
-          note: f.confianza ? `Confianza: ${Math.round(f.confianza * 100)}%` : 'Campo detectado',
-          page: 1,
+          note: f.confianza ? `Confianza IA: ${Math.round(f.confianza * 100)}%` : 'Campo detectado',
+          page: (idx % pages) + 1,
           x: f.coordenadas?.x ? Math.min(80, Math.max(5, f.coordenadas.x / 8)) : (15 + (idx * 20) % 60),
           y: f.coordenadas?.y ? Math.min(85, Math.max(10, f.coordenadas.y / 10)) : (25 + (idx * 15) % 55),
           w: f.coordenadas?.width ? Math.min(50, Math.max(15, f.coordenadas.width / 6)) : 30,
@@ -92,18 +95,18 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
     }
   }, [initialFile]);
 
-  const addZone = () => {
+  const addZoneOnPage = (pg: number = currentPage, coords?: { x: number; y: number; w: number; h: number }) => {
     const id = Math.max(...zones.map((zone) => zone.id), 0) + 1;
     const zone: Zone = {
       id,
-      label: 'Nueva zona editable',
+      label: `Nueva zona Pág ${pg}`,
       type: 'Texto',
-      note: 'Añadida manualmente con ratón',
-      page: 1,
-      x: 26,
-      y: 46,
-      w: 28,
-      h: 8,
+      note: 'Delimitada en el lienzo',
+      page: pg,
+      x: coords ? Math.round(coords.x) : 26,
+      y: coords ? Math.round(coords.y) : 46,
+      w: coords ? Math.max(10, Math.round(coords.w)) : 28,
+      h: coords ? Math.max(5, Math.round(coords.h)) : 8,
     };
     setZones([...zones, zone]);
     setSelected(id);
@@ -122,7 +125,6 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
       const url = apiService.getExportUrl(docId, exportFormat);
       window.open(url, '_blank');
     } else {
-      // Direct demo fallback download
       alert(`Generando plantilla editable en formato ${exportFormat.toUpperCase()} para "${fileName}"...`);
     }
   };
@@ -139,7 +141,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
             <Menu size={18} />
           </button>
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-indigo-600 text-white">
+            <span className="flex size-7 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
               <ScanLine size={16} />
             </span>
             <span className="font-semibold tracking-tight text-white">DocScan Inteligente</span>
@@ -306,11 +308,15 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                 zones={zones}
                 current={current}
                 pages={pages}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
                 selected={selected}
                 setSelected={setSelected}
-                addZone={addZone}
+                addZoneOnPage={addZoneOnPage}
                 removeZone={removeZone}
                 setZones={setZones}
+                resolvedAiPrompt={resolvedAiPrompt}
+                setResolvedAiPrompt={setResolvedAiPrompt}
               />
             )}
 
@@ -451,25 +457,69 @@ function Study({
   zones,
   current,
   pages,
+  currentPage,
+  setCurrentPage,
   selected,
   setSelected,
-  addZone,
+  addZoneOnPage,
   removeZone,
   setZones,
+  resolvedAiPrompt,
+  setResolvedAiPrompt,
 }: {
   zones: Zone[];
   current: Zone;
   pages: number;
+  currentPage: number;
+  setCurrentPage: (p: number) => void;
   selected: number;
   setSelected: (n: number) => void;
-  addZone: () => void;
+  addZoneOnPage: (pg: number, coords?: { x: number; y: number; w: number; h: number }) => void;
   removeZone: (id: number) => void;
   setZones: (z: Zone[]) => void;
+  resolvedAiPrompt: string | null;
+  setResolvedAiPrompt: (msg: string | null) => void;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
+
+  const pageZones = useMemo(() => zones.filter(z => z.page === currentPage), [zones, currentPage]);
 
   const updateCurrentZone = (key: keyof Zone, val: any) => {
     setZones(zones.map(z => z.id === current.id ? { ...z, [key]: val } : z));
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setIsDrawing(true);
+    setDrawStart({ x, y });
+  };
+
+  const handleCanvasMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawing || !drawStart) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const endX = ((e.clientX - rect.left) / rect.width) * 100;
+    const endY = ((e.clientY - rect.top) / rect.height) * 100;
+
+    const x = Math.min(drawStart.x, endX);
+    const y = Math.min(drawStart.y, endY);
+    const w = Math.abs(endX - drawStart.x);
+    const h = Math.abs(endY - drawStart.y);
+
+    if (w > 5 && h > 3) {
+      addZoneOnPage(currentPage, { x, y, w, h });
+    }
+    setIsDrawing(false);
+    setDrawStart(null);
+  };
+
+  const handleResolveAiPrompt = (typeChoice: string) => {
+    if (current) {
+      updateCurrentZone('type', typeChoice);
+    }
+    setResolvedAiPrompt(`🤖 Confirmado por usuario: Zona clasificada como "${typeChoice}"`);
   };
 
   return (
@@ -484,15 +534,15 @@ function Study({
             <button
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(currentPage - 1)}
-              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30"
+              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-xs text-slate-300">Página {currentPage} de {pages}</span>
+            <span className="text-xs text-slate-300 font-medium px-2">Página {currentPage} de {pages}</span>
             <button
               disabled={currentPage >= pages}
               onClick={() => setCurrentPage(currentPage + 1)}
-              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30"
+              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
             >
               <ChevronRight size={16} />
             </button>
@@ -500,7 +550,11 @@ function Study({
         </div>
 
         <div className="mt-5 flex min-h-[480px] items-center justify-center rounded-md bg-slate-950 p-6 border border-slate-800">
-          <div className="relative aspect-[0.72] w-full max-w-[440px] cursor-crosshair bg-slate-900 p-8 text-slate-100 shadow-2xl rounded-md border border-slate-700">
+          <div
+            onMouseDown={handleCanvasMouseDown}
+            onMouseUp={handleCanvasMouseUp}
+            className="relative aspect-[0.72] w-full max-w-[440px] cursor-crosshair bg-slate-900 p-8 text-slate-100 shadow-2xl rounded-md border border-slate-700 select-none"
+          >
             <div className="h-3 w-3/4 bg-slate-800" />
             <div className="mt-8 space-y-3">
               <div className="h-2 w-full bg-slate-800/80" />
@@ -508,13 +562,13 @@ function Study({
               <div className="h-2 w-4/5 bg-slate-800/80" />
             </div>
 
-            {zones.map((z) => (
+            {pageZones.map((z) => (
               <button
                 key={z.id}
-                onClick={() => setSelected(z.id)}
+                onClick={(e) => { e.stopPropagation(); setSelected(z.id); }}
                 className={`absolute border-2 rounded transition-all text-left p-1 text-[9px] font-medium overflow-hidden ${
                   selected === z.id
-                    ? 'border-indigo-500 bg-indigo-500/30 text-white shadow-lg'
+                    ? 'border-indigo-500 bg-indigo-500/30 text-white shadow-lg z-10'
                     : 'border-indigo-400/60 bg-indigo-500/10 text-indigo-300 hover:border-indigo-400'
                 }`}
                 style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
@@ -523,53 +577,62 @@ function Study({
               </button>
             ))}
 
-            <div className="absolute bottom-6 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400">
-              Página {currentPage} · Zonas delimitadas interactivas
+            <div className="absolute bottom-6 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400 flex justify-between">
+              <span>Página {currentPage} de {pages}</span>
+              <span>{pageZones.length} zonas en esta página</span>
             </div>
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
           <span>
-            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre el lienzo para marcar una nueva zona
+            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre el lienzo para delimitar una zona
           </span>
-          <button onClick={addZone} className="font-medium text-indigo-400 hover:text-indigo-300">
-            + Nueva zona
+          <button onClick={() => addZoneOnPage(currentPage)} className="font-medium text-indigo-400 hover:text-indigo-300">
+            + Nueva zona Pág {currentPage}
           </button>
         </div>
       </div>
 
       <div className="space-y-5">
-        {/* IA Question Prompt Card */}
+        {/* IA Question Prompt Card (Human-in-the-Loop) */}
         <div className="rounded-lg border border-amber-500/40 bg-amber-950/20 p-5">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-amber-400" />
             <h3 className="font-semibold text-amber-200 text-sm">Consulta de IA (Human-in-the-Loop)</h3>
           </div>
-          <p className="mt-3 text-xs leading-5 text-amber-100/80">
-            La IA detectó una zona dudosa en <span className="font-mono text-white">(x:220, y:145)</span>. ¿Es un campo de Firma o Texto?
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => updateCurrentZone('type', 'Firma')}
-              className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30"
-            >
-              Firma
-            </button>
-            <button
-              onClick={() => updateCurrentZone('type', 'Texto')}
-              className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30"
-            >
-              Texto
-            </button>
-          </div>
+          {resolvedAiPrompt ? (
+            <p className="mt-3 text-xs leading-5 text-emerald-300 font-medium">
+              <Check size={14} className="inline mr-1" /> {resolvedAiPrompt}
+            </p>
+          ) : (
+            <>
+              <p className="mt-3 text-xs leading-5 text-amber-100/80">
+                La IA detectó una zona dudosa en la página {currentPage}. ¿Es un campo de Firma o Texto?
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleResolveAiPrompt('Firma')}
+                  className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 font-medium"
+                >
+                  Firma
+                </button>
+                <button
+                  onClick={() => handleResolveAiPrompt('Texto')}
+                  className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 font-medium"
+                >
+                  Texto
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Selected Zone Form */}
         {current && (
           <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-white text-sm">Editar Zona #{current.id}</h3>
+              <h3 className="font-semibold text-white text-sm">Editar Zona #{current.id} (Pág {current.page})</h3>
               <button
                 onClick={() => removeZone(current.id)}
                 className="text-slate-400 hover:text-rose-400 p-1"
@@ -621,17 +684,17 @@ function Study({
         {/* Zones list */}
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white text-sm">Zonas Marcadas</h3>
-            <span className="text-xs text-slate-400">{zones.length}</span>
+            <h3 className="font-semibold text-white text-sm">Zonas Marcadas ({zones.length})</h3>
+            <span className="text-[10px] text-indigo-400">Pág {currentPage}: {pageZones.length}</span>
           </div>
           <div className="mt-4 space-y-2 max-h-[220px] overflow-y-auto">
             {zones.map((z) => (
               <button
                 key={z.id}
-                onClick={() => setSelected(z.id)}
+                onClick={() => { setCurrentPage(z.page); setSelected(z.id); }}
                 className={`flex w-full items-center justify-between rounded-md border p-2.5 text-left text-xs ${
                   selected === z.id
-                    ? 'border-indigo-500 bg-indigo-500/20 text-white'
+                    ? 'border-indigo-500 bg-indigo-500/20 text-white font-medium'
                     : 'border-slate-800 hover:bg-slate-800/60 text-slate-300'
                 }`}
               >
@@ -707,7 +770,7 @@ function Generation({
                 onClick={() => setExportFormat(format)}
                 className={`flex items-center gap-3 rounded-md border p-4 text-left transition-all ${
                   exportFormat === format
-                    ? 'border-indigo-500 bg-indigo-500/20 text-white'
+                    ? 'border-indigo-500 bg-indigo-500/20 text-white font-medium'
                     : 'border-slate-800 bg-slate-950 hover:bg-slate-800/60 text-slate-300'
                 }`}
               >
