@@ -220,8 +220,10 @@ export function DocscanApp() {
   const [howStep, setHowStep] = useState(0);
   const [notice, setNotice] = useState(false);
   const [activeFile, setActiveFile] = useState<File | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const go = (next: View) => {
+    setMobileMenuOpen(false);
     if (next === 'loading') {
       setView('loading');
       window.setTimeout(() => setView('upload'), 900);
@@ -236,33 +238,35 @@ export function DocscanApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur px-5 sm:px-8">
-        <button onClick={() => go('home')} className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
-            <ScanLine size={17} />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Header Responsivo */}
+      <header className="sticky top-0 z-40 flex h-14 sm:h-16 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur px-4 sm:px-8">
+        <button onClick={() => go('home')} className="flex items-center gap-2.5 sm:gap-3">
+          <span className="flex size-7 sm:size-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
+            <ScanLine size={16} className="sm:size-[17px]" />
           </span>
-          <span className="font-semibold tracking-tight text-white">
+          <span className="font-semibold text-sm sm:text-base tracking-tight text-white">
             DocScan <span className="font-normal text-slate-400">Inteligente</span>
           </span>
         </button>
 
+        {/* Desktop Nav */}
         <nav className="hidden items-center gap-1 md:flex">
           <button
             onClick={() => go('home')}
-            className={`rounded-md px-3 py-2 text-sm ${view === 'home' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'home' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Inicio
           </button>
           <button
             onClick={() => go('how')}
-            className={`rounded-md px-3 py-2 text-sm ${view === 'how' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'how' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Cómo funciona
           </button>
           <button
             onClick={() => go('workspace')}
-            className={`rounded-md px-3 py-2 text-sm ${view === 'workspace' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'workspace' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Workspace
           </button>
@@ -271,7 +275,7 @@ export function DocscanApp() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setLogin(true)}
-            className="hidden rounded-md border border-slate-800 px-3 py-2 text-sm font-medium hover:bg-slate-800 sm:block text-slate-200"
+            className="hidden rounded-md border border-slate-800 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-slate-800 sm:block text-slate-200"
           >
             Iniciar sesión
           </button>
@@ -288,11 +292,49 @@ export function DocscanApp() {
               </div>
             )}
           </button>
-          <button onClick={() => go('home')} className="rounded-md p-2 md:hidden text-slate-400">
-            <Menu size={19} />
+          
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="rounded-md p-2 text-slate-400 hover:bg-slate-800 md:hidden"
+            aria-label="Menú móvil"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </header>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-x-0 top-14 z-40 border-b border-slate-800 bg-slate-950 p-4 md:hidden animate-in slide-in-from-top duration-200">
+          <nav className="flex flex-col gap-2">
+            <button
+              onClick={() => go('home')}
+              className={`rounded-md px-3 py-2 text-left text-sm ${view === 'home' ? 'bg-slate-800 text-white font-medium' : 'text-slate-300'}`}
+            >
+              Inicio
+            </button>
+            <button
+              onClick={() => go('how')}
+              className={`rounded-md px-3 py-2 text-left text-sm ${view === 'how' ? 'bg-slate-800 text-white font-medium' : 'text-slate-300'}`}
+            >
+              Cómo funciona
+            </button>
+            <button
+              onClick={() => go('workspace')}
+              className={`rounded-md px-3 py-2 text-left text-sm ${view === 'workspace' ? 'bg-slate-800 text-white font-medium' : 'text-slate-300'}`}
+            >
+              Workspace
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); setLogin(true); }}
+              className="mt-2 rounded-md border border-slate-700 px-3 py-2 text-center text-sm font-medium text-white"
+            >
+              Iniciar sesión
+            </button>
+          </nav>
+        </div>
+      )}
 
       {view === 'home' && <Landing start={() => go('loading')} how={() => go('how')} login={() => setLogin(true)} />}
       {view === 'how' && <How start={() => go('loading')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
@@ -308,32 +350,32 @@ export function DocscanApp() {
 function Landing({ start, how, login }: { start: () => void; how: () => void; login: () => void }) {
   return (
     <main>
-      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-24 pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pt-28">
+      <section className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-14 px-4 sm:px-6 pb-16 sm:pb-24 pt-12 sm:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pt-28">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-400">
-            <ShieldCheck size={14} className="text-indigo-400" /> Gratis para empezar · Sin registro obligatorio
+          <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-400">
+            <ShieldCheck size={14} className="text-indigo-400 shrink-0" /> Gratis para empezar · Sin registro obligatorio
           </div>
-          <h1 className="max-w-3xl text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-6xl text-white">
+          <h1 className="max-w-3xl text-balance text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.045em] text-white leading-tight sm:leading-none">
             Convierte cualquier documento en una plantilla <span className="text-indigo-400">editable al 100%.</span>
           </h1>
-          <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-slate-400">
+          <p className="mt-4 sm:mt-6 max-w-xl text-pretty text-base sm:text-lg leading-7 sm:leading-8 text-slate-400">
             Analiza PDFs, Word, Excel, PowerPoint e imágenes. Resume su contenido, conserva su apariencia e identifica espacios en controles listos para completar.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap gap-3">
             <button
               onClick={start}
-              className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-500 shadow-md transition-all"
+              className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-500 shadow-md transition-all text-center justify-center flex items-center"
             >
               Comenzar gratis <ArrowRight size={16} className="ml-2 inline" />
             </button>
             <button
               onClick={how}
-              className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200"
+              className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200 text-center justify-center flex items-center"
             >
               <Play size={14} className="mr-2 inline" /> Ver cómo funciona
             </button>
           </div>
-          <button onClick={login} className="mt-5 text-xs text-slate-400 underline underline-offset-4 hover:text-slate-200">
+          <button onClick={login} className="mt-4 sm:mt-5 text-xs text-slate-400 underline underline-offset-4 hover:text-slate-200">
             Iniciar sesión opcionalmente para guardar tu trabajo
           </button>
         </div>
@@ -341,15 +383,15 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
       </section>
 
       <section className="border-y border-slate-800 bg-slate-900/40">
-        <div className="mx-auto max-w-6xl px-6 py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Una herramienta, muchos usos</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Del archivo original a un flujo digital completo.</h2>
-            <p className="mt-4 leading-7 text-slate-400">
+            <h2 className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-white">Del archivo original a un flujo digital completo.</h2>
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base leading-6 sm:leading-7 text-slate-400">
               Reduce papel, evita rehacer formatos y convierte procesos manuales en experiencias claras. DocScan entiende que cada formato necesita una construcción diferente.
             </p>
           </div>
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
+          <div className="mt-8 sm:mt-10 grid gap-6 sm:gap-8 md:grid-cols-3">
             <Benefit
               icon={<Sparkles size={17} />}
               title="Analiza y resume"
@@ -369,15 +411,15 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-5 md:grid-cols-5">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+        <div className="grid gap-4 sm:gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           {formats.map(({ kind, label, detail, icon: Icon }) => (
-            <div key={kind} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-              <span className={`flex size-9 items-center justify-center rounded-md ${kindColors[kind]} text-white`}>
-                <Icon size={17} />
+            <div key={kind} className="rounded-lg border border-slate-800 bg-slate-900 p-3.5 sm:p-4">
+              <span className={`flex size-8 sm:size-9 items-center justify-center rounded-md ${kindColors[kind]} text-white`}>
+                <Icon size={16} />
               </span>
-              <p className="mt-4 text-sm font-medium text-white">{label}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">{detail}</p>
+              <p className="mt-3 sm:mt-4 text-xs sm:text-sm font-medium text-white">{label}</p>
+              <p className="mt-1 text-[11px] sm:text-xs leading-4 sm:leading-5 text-slate-400">{detail}</p>
             </div>
           ))}
         </div>
@@ -388,35 +430,35 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
 
 function PreviewCard() {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 shadow-2xl">
-      <div className="flex items-center justify-between border-b border-slate-800 px-3 pb-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3.5 sm:p-4 shadow-2xl">
+      <div className="flex items-center justify-between border-b border-slate-800 px-2 sm:px-3 pb-3 sm:pb-4">
         <div className="flex items-center gap-2">
-          <ScanLine size={15} className="text-indigo-400" />
+          <ScanLine size={15} className="text-indigo-400 shrink-0" />
           <span className="text-xs font-medium text-slate-200">Plantilla reconstruida</span>
         </div>
         <span className="text-[10px] text-emerald-400">Apariencia preservada</span>
       </div>
-      <div className="mt-5 rounded-lg border border-slate-800 bg-slate-950 p-5">
+      <div className="mt-4 sm:mt-5 rounded-lg border border-slate-800 bg-slate-950 p-4 sm:p-5">
         <div className="flex justify-between">
-          <div className="h-2 w-32 rounded bg-slate-800" />
-          <div className="h-2 w-12 rounded bg-slate-800" />
+          <div className="h-2 w-28 sm:w-32 rounded bg-slate-800" />
+          <div className="h-2 w-10 sm:w-12 rounded bg-slate-800" />
         </div>
-        <div className="mt-8 grid gap-4">
+        <div className="mt-6 sm:mt-8 grid gap-3 sm:gap-4">
           <div className="h-2 w-3/4 rounded bg-slate-800" />
-          <div className="h-9 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-3 text-xs text-indigo-300">
+          <div className="h-8 sm:h-9 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-3 text-xs text-indigo-300">
             Campo editable de texto
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Fecha</div>
-            <div className="h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Firma</div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="h-8 sm:h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Fecha</div>
+            <div className="h-8 sm:h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Firma</div>
           </div>
-          <div className="h-16 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-3 text-xs text-emerald-300">
+          <div className="h-14 sm:h-16 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-3 text-xs text-emerald-300">
             Texto estático impreso no modificado
           </div>
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-        <Check size={14} className="text-emerald-400" /> Solo cambia lo que indicaste
+      <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-slate-400">
+        <Check size={14} className="text-emerald-400 shrink-0" /> Solo cambia lo que indicaste
       </div>
     </div>
   );
@@ -428,8 +470,8 @@ function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; 
       <span className="flex size-9 items-center justify-center rounded-md border border-slate-800 text-indigo-400 bg-slate-900">
         {icon}
       </span>
-      <h2 className="mt-4 font-medium text-white">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-400">{text}</p>
+      <h2 className="mt-3 sm:mt-4 font-medium text-white text-base sm:text-lg">{title}</h2>
+      <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-400">{text}</p>
     </div>
   );
 }
@@ -437,16 +479,16 @@ function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; 
 function How({ start, back, step, setStep }: { start: () => void; back: () => void; step: number; setStep: (n: number) => void }) {
   const current = tutorialSteps[step] || tutorialSteps[0];
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <button onClick={back} className="text-sm text-slate-400 hover:text-white mb-6">
+    <main className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10">
+      <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white mb-4 sm:mb-6">
         <ArrowLeft size={15} className="mr-1 inline" /> Volver al inicio
       </button>
 
-      <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 max-h-[700px] overflow-y-auto">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr]">
+        <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 max-h-[220px] sm:max-h-[350px] lg:max-h-[700px] overflow-y-auto">
           <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Guía completa</p>
-          <p className="mt-2 text-sm text-slate-400">{step + 1} de {tutorialSteps.length} etapas</p>
-          <div className="mt-5 space-y-1">
+          <p className="mt-1 text-xs sm:text-sm text-slate-400">{step + 1} de {tutorialSteps.length} etapas</p>
+          <div className="mt-4 space-y-1">
             {tutorialSteps.map((item, i) => (
               <button
                 key={item.title}
@@ -462,79 +504,79 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                 >
                   {i < step ? <Check size={11} /> : i + 1}
                 </span>
-                {item.title}
+                <span className="truncate">{item.title}</span>
               </button>
             ))}
           </div>
         </aside>
 
         <section>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Cómo funciona · paso {step + 1}</p>
-              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">{current.title}</h1>
+              <h1 className="mt-1 sm:mt-2 text-2xl sm:text-4xl font-semibold tracking-tight text-white">{current.title}</h1>
             </div>
             <div className="hidden gap-1 sm:flex">
               {[0, 1, 2, 3, 4].map((i) => (
                 <span
                   key={i}
-                  className={`h-1.5 w-10 rounded-sm ${i <= Math.floor(step / 4) ? 'bg-indigo-500' : 'bg-slate-800'}`}
+                  className={`h-1.5 w-8 sm:w-10 rounded-sm ${i <= Math.floor(step / 4) ? 'bg-indigo-500' : 'bg-slate-800'}`}
                 />
               ))}
             </div>
           </div>
 
-          <div className="mt-7 grid gap-5 xl:grid-cols-[1fr_280px]">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 sm:p-8">
-              <div className="flex min-h-[390px] flex-col justify-between">
+          <div className="mt-5 sm:mt-7 grid gap-5 xl:grid-cols-[1fr_280px]">
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-8">
+              <div className="flex min-h-[340px] sm:min-h-[390px] flex-col justify-between">
                 <div>
-                  <span className="flex size-11 items-center justify-center rounded-lg bg-slate-800 text-indigo-400">
+                  <span className="flex size-10 sm:size-11 items-center justify-center rounded-lg bg-slate-800 text-indigo-400">
                     <Sparkles size={20} />
                   </span>
-                  <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-200">{current.summary}</p>
+                  <p className="mt-5 sm:mt-7 max-w-2xl text-base sm:text-lg leading-7 sm:leading-8 text-slate-300">{current.summary}</p>
                   
                   {/* DYNAMIC WHAT HAPPENS BOX */}
-                  <div className="mt-7 rounded-lg border border-slate-800 bg-slate-950 p-5">
+                  <div className="mt-5 sm:mt-7 rounded-lg border border-slate-800 bg-slate-950 p-4 sm:p-5">
                     <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Qué ocurre en esta etapa</p>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                    <p className="mt-2 sm:mt-3 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
                       {current.whatHappens}
                     </p>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-md border border-slate-800 bg-slate-900 p-3">
-                        <p className="text-xs text-slate-400">Entrada</p>
-                        <p className="mt-1 text-sm font-medium text-white">{current.input}</p>
+                    <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-3">
+                      <div className="rounded-md border border-slate-800 bg-slate-900 p-2.5 sm:p-3">
+                        <p className="text-[10px] sm:text-xs text-slate-400">Entrada</p>
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.input}</p>
                       </div>
-                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-3">
-                        <p className="text-xs text-indigo-400">Acción</p>
-                        <p className="mt-1 text-sm font-medium text-white">{current.action}</p>
+                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-2.5 sm:p-3">
+                        <p className="text-[10px] sm:text-xs text-indigo-400">Acción</p>
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.action}</p>
                       </div>
-                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3">
-                        <p className="text-xs text-emerald-400">Resultado</p>
-                        <p className="mt-1 text-sm font-medium text-white">{current.output}</p>
+                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-2.5 sm:p-3">
+                        <p className="text-[10px] sm:text-xs text-emerald-400">Resultado</p>
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.output}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-5">
+                <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-slate-800 pt-4 sm:pt-5">
                   <button
                     disabled={step === 0}
                     onClick={() => setStep(step - 1)}
-                    className="rounded-md border border-slate-800 px-3 py-2 text-sm text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+                    className="rounded-md border border-slate-800 px-3 py-2 text-xs sm:text-sm text-slate-300 disabled:opacity-30 hover:bg-slate-800"
                   >
                     <ChevronLeft size={15} className="mr-1 inline" /> Anterior
                   </button>
                   {step === tutorialSteps.length - 1 ? (
                     <button
                       onClick={start}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
                     >
                       Probar DocScan <ArrowRight size={15} className="ml-1 inline" />
                     </button>
                   ) : (
                     <button
                       onClick={() => setStep(step + 1)}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
                     >
                       Siguiente <ChevronRight size={15} className="ml-1 inline" />
                     </button>
@@ -544,28 +586,28 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
             </div>
 
             {/* DYNAMIC EXPECTED RESULT ASIDE */}
-            <aside className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Resultado esperado</p>
-              <div className="mt-5 rounded-md border border-slate-800 bg-slate-950 p-4">
+              <div className="mt-4 sm:mt-5 rounded-md border border-slate-800 bg-slate-950 p-3.5 sm:p-4">
                 <div className="h-2 w-28 rounded bg-slate-800" />
-                <div className="mt-5 space-y-3">
+                <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
                   <div className="h-2 w-full rounded bg-slate-800" />
-                  <div className="h-8 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-xs text-indigo-300 font-medium truncate">
+                  <div className="h-7 sm:h-8 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-xs text-indigo-300 font-medium truncate">
                     {current.action}
                   </div>
-                  <div className="h-8 rounded border border-slate-800 flex items-center px-2 text-xs text-slate-500 truncate">
+                  <div className="h-7 sm:h-8 rounded border border-slate-800 flex items-center px-2 text-xs text-slate-500 truncate">
                     {current.input}
                   </div>
-                  <div className="h-8 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-xs text-emerald-300 font-medium truncate">
+                  <div className="h-7 sm:h-8 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-xs text-emerald-300 font-medium truncate">
                     {current.output}
                   </div>
                 </div>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-300">
+              <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
                 {current.resultText}
               </p>
-              <div className="mt-5 flex items-center gap-2 text-xs text-emerald-400">
-                <Check size={14} /> Sin alterar el documento impreso original
+              <div className="mt-4 sm:mt-5 flex items-center gap-2 text-xs text-emerald-400">
+                <Check size={14} className="shrink-0" /> Sin alterar el documento impreso original
               </div>
             </aside>
           </div>
@@ -577,14 +619,14 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
 
 function Loading() {
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6">
+    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 sm:px-6">
       <div className="text-center">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-indigo-400">
-          <ScanLine size={25} />
+        <div className="mx-auto flex size-12 sm:size-14 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-indigo-400">
+          <ScanLine size={24} />
         </div>
-        <h1 className="mt-6 text-2xl font-semibold text-white">Preparando tu espacio</h1>
-        <p className="mt-2 text-sm text-slate-400">Configurando herramientas de carga y revisión…</p>
-        <div className="mx-auto mt-6 h-1 w-48 overflow-hidden rounded bg-slate-800">
+        <h1 className="mt-5 sm:mt-6 text-xl sm:text-2xl font-semibold text-white">Preparando tu espacio</h1>
+        <p className="mt-2 text-xs sm:text-sm text-slate-400">Configurando herramientas de carga y revisión…</p>
+        <div className="mx-auto mt-5 sm:mt-6 h-1 w-40 sm:w-48 overflow-hidden rounded bg-slate-800">
           <div className="h-full w-2/3 animate-pulse bg-indigo-500" />
         </div>
       </div>
@@ -610,40 +652,40 @@ function UploadView({ start, back }: { start: (file: File) => void; back: () => 
   };
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-12">
-      <button onClick={back} className="text-sm text-slate-400 hover:text-white mb-6">
+    <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-12">
+      <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white mb-4 sm:mb-6">
         <ArrowLeft size={15} className="mr-1 inline" /> Inicio
       </button>
 
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Paso 1 · Ingestión</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Carga tu documento</h1>
-        <p className="mt-2 text-slate-400">Primero podrás leerlo y verificarlo; después indicarás qué debe cambiar.</p>
+        <h1 className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white">Carga tu documento</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-400">Primero podrás leerlo y verificarlo; después indicarás qué debe cambiar.</p>
       </div>
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className="mt-6 sm:mt-8 grid gap-5 lg:grid-cols-[1fr_300px]">
         <label
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          className={`flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed transition-all p-8 text-center ${
+          className={`flex min-h-60 sm:min-h-80 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed transition-all p-6 sm:p-8 text-center ${
             dragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:border-slate-500'
           }`}
         >
           <Upload size={28} className="text-indigo-400" />
-          <span className="mt-4 font-medium text-white">Arrastra un archivo aquí</span>
-          <span className="mt-2 text-sm text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
+          <span className="mt-3 sm:mt-4 font-medium text-sm sm:text-base text-white">Arrastra un archivo aquí</span>
+          <span className="mt-1.5 sm:mt-2 text-xs text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
           <input className="sr-only" type="file" accept=".docx,.pdf,.xlsx,.pptx,image/*" onChange={handleFileChange} />
         </label>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
           <p className="text-xs text-slate-400">Formatos compatibles</p>
           {formats.map(({ kind, label, icon: Icon }) => (
-            <div key={kind} className="mt-4 flex items-center gap-3">
-              <span className={`flex size-8 items-center justify-center rounded ${kindColors[kind]} text-white`}>
-                <Icon size={15} />
+            <div key={kind} className="mt-3 sm:mt-4 flex items-center gap-3">
+              <span className={`flex size-7 sm:size-8 items-center justify-center rounded ${kindColors[kind]} text-white`}>
+                <Icon size={14} />
               </span>
-              <span className="text-sm text-slate-200">{label}</span>
+              <span className="text-xs sm:text-sm text-slate-200">{label}</span>
             </div>
           ))}
         </div>
@@ -654,15 +696,15 @@ function UploadView({ start, back }: { start: (file: File) => void; back: () => 
 
 function LoginModal({ close }: { close: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-5">
-      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 sm:p-5">
+      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-6 shadow-2xl">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex size-9 items-center justify-center rounded-md bg-indigo-600 text-white">
               <LockKeyhole size={17} />
             </div>
-            <h2 className="mt-5 text-xl font-semibold text-white">Inicia sesión cuando quieras</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <h2 className="mt-4 sm:mt-5 text-lg sm:text-xl font-semibold text-white">Inicia sesión cuando quieras</h2>
+            <p className="mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-400">
               Es opcional. Guarda tus plantillas y vuelve a ellas desde cualquier dispositivo.
             </p>
           </div>
@@ -672,7 +714,7 @@ function LoginModal({ close }: { close: () => void }) {
         </div>
         <button
           onClick={close}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-slate-700 px-4 py-2.5 text-sm font-medium hover:bg-slate-800 text-white"
+          className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-slate-700 px-4 py-2.5 text-xs sm:text-sm font-medium hover:bg-slate-800 text-white"
         >
           <LockKeyhole size={16} /> Continuar con Google
         </button>
