@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Grip, Layers3, Menu, MousePointer2, Plus, ScanLine, Settings2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Grip, Layers3, Menu, MousePointer2, Plus, ScanLine, Settings2, Sparkles, Trash2, Upload, Filter } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { DetectedField } from '../types/document';
 
@@ -20,6 +20,7 @@ const initialZones: Zone[] = [
   { id: 2, label: 'Fecha de solicitud', type: 'Fecha', note: 'Día de diligenciamiento', page: 1, x: 61, y: 28, w: 20, h: 6 },
   { id: 3, label: 'Firma del responsable', type: 'Firma', note: 'Firma manuscrita requerida', page: 1, x: 52, y: 72, w: 30, h: 9 },
   { id: 4, label: 'Observaciones anexas', type: 'Texto', note: 'Notas suplementarias página 2', page: 2, x: 18, y: 35, w: 60, h: 12 },
+  { id: 5, label: 'Cláusula de confidencialidad', type: 'Estatico', note: 'Texto impreso legal no editable', page: 3, x: 15, y: 20, w: 70, h: 25 },
 ];
 
 interface DocscanWorkspaceProps {
@@ -41,11 +42,12 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
   const [sidebar, setSidebar] = useState(true);
   const [exportFormat, setExportFormat] = useState<'docx' | 'xlsx' | 'pdf'>('docx');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(10); // Soporte dinámico para 1 a 1000+ páginas
+  const [showOnlyCurrentPageZones, setShowOnlyCurrentPageZones] = useState(true);
   const [resolvedAiPrompt, setResolvedAiPrompt] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const current = zones.find((zone) => zone.id === selected) ?? zones[0];
-  const pages = useMemo(() => fileType === 'XLSX' ? 3 : fileType === 'PDF' ? 4 : 2, [fileType]);
 
   // Handle uploaded file via API Service
   const handleFile = async (file?: File) => {
@@ -67,13 +69,16 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
         setPrintedLines(processRes.texto_impreso);
       }
       
+      const realTotalPages = (processRes as any).total_paginas || (file.name.endsWith('.pdf') ? 15 : 5);
+      setTotalPages(Math.max(1, realTotalPages));
+
       if (processRes.campos_detectados && processRes.campos_detectados.length > 0) {
         const mappedZones: Zone[] = processRes.campos_detectados.map((f: DetectedField, idx: number) => ({
           id: idx + 1,
           label: f.etiqueta || `Campo ${idx + 1}`,
           type: f.tipo_campo || 'Texto',
           note: f.confianza ? `Confianza IA: ${Math.round(f.confianza * 100)}%` : 'Campo detectado',
-          page: (idx % pages) + 1,
+          page: (idx % realTotalPages) + 1,
           x: f.coordenadas?.x ? Math.min(80, Math.max(5, f.coordenadas.x / 8)) : (15 + (idx * 20) % 60),
           y: f.coordenadas?.y ? Math.min(85, Math.max(10, f.coordenadas.y / 10)) : (25 + (idx * 15) % 55),
           w: f.coordenadas?.width ? Math.min(50, Math.max(15, f.coordenadas.width / 6)) : 30,
@@ -95,13 +100,14 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
     }
   }, [initialFile]);
 
-  const addZoneOnPage = (pg: number = currentPage, coords?: { x: number; y: number; w: number; h: number }) => {
+  const addZoneOnPage = (pg: number = currentPage, coords?: { x: number; y: number; w: number; h: number }, defaultType: string = 'Texto') => {
     const id = Math.max(...zones.map((zone) => zone.id), 0) + 1;
+    const isStatic = defaultType === 'Estatico';
     const zone: Zone = {
       id,
-      label: `Nueva zona Pág ${pg}`,
-      type: 'Texto',
-      note: 'Delimitada en el lienzo',
+      label: isStatic ? `Texto Estático Impreso (Pág ${pg})` : `Nueva zona editable (Pág ${pg})`,
+      type: defaultType,
+      note: isStatic ? 'Marcado como no editable (impreso intacto)' : 'Delimitada en el lienzo',
       page: pg,
       x: coords ? Math.round(coords.x) : 26,
       y: coords ? Math.round(coords.y) : 46,
@@ -196,7 +202,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                   step === 2 ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                 }`}
               >
-                <MousePointer2 size={16} /> Estudio de plantilla
+                <MousePointer2 size={16} /> Estudio (1 a N págs)
               </button>
               <button
                 onClick={() => setStep(3)}
@@ -214,7 +220,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                 <FileText size={16} className="mt-0.5 text-indigo-400 shrink-0" />
                 <span className="min-w-0 text-xs">
                   <span className="block truncate font-medium text-slate-200">{fileName}</span>
-                  <span className="text-slate-400">{fileType} · {fileSize} KB</span>
+                  <span className="text-slate-400">{fileType} · {totalPages} Páginas</span>
                 </span>
               </div>
             </div>
@@ -226,7 +232,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-slate-400">Workspace / Plantillas</p>
-                <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Crear plantilla editable</h1>
+                <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Crear plantilla editable (1 a {totalPages} páginas)</h1>
               </div>
               <button
                 onClick={() => setStep(Math.min(3, step + 1))}
@@ -295,11 +301,12 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                     zones={zones}
                     printedLines={printedLines}
                     isProcessing={isProcessing}
+                    totalPages={totalPages}
                     onStartStudio={() => setStep(2)}
                   />
                 </div>
 
-                <Metadata fileName={fileName} fileType={fileType} fileSize={fileSize} docId={docId} />
+                <Metadata fileName={fileName} fileType={fileType} fileSize={fileSize} docId={docId} totalPages={totalPages} />
               </section>
             )}
 
@@ -307,7 +314,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
               <Study
                 zones={zones}
                 current={current}
-                pages={pages}
+                totalPages={totalPages}
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
                 selected={selected}
@@ -317,6 +324,8 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                 setZones={setZones}
                 resolvedAiPrompt={resolvedAiPrompt}
                 setResolvedAiPrompt={setResolvedAiPrompt}
+                showOnlyCurrentPageZones={showOnlyCurrentPageZones}
+                setShowOnlyCurrentPageZones={setShowOnlyCurrentPageZones}
               />
             )}
 
@@ -327,6 +336,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                 exportFormat={exportFormat}
                 setExportFormat={setExportFormat}
                 handleExport={handleExport}
+                totalPages={totalPages}
               />
             )}
           </div>
@@ -342,6 +352,7 @@ function DocumentPreview({
   zones,
   printedLines,
   isProcessing,
+  totalPages,
   onStartStudio,
 }: {
   fileType: string;
@@ -349,6 +360,7 @@ function DocumentPreview({
   zones: Zone[];
   printedLines: string[];
   isProcessing: boolean;
+  totalPages: number;
   onStartStudio: () => void;
 }) {
   return (
@@ -356,7 +368,7 @@ function DocumentPreview({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold text-white">Visor de lectura previa</h2>
-          <p className="mt-1 text-xs text-slate-400">Renderizado fiel del documento · página 1 de 2</p>
+          <p className="mt-1 text-xs text-slate-400">Renderizado fiel del documento · Total {totalPages} páginas</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-md border border-slate-700 px-2 py-1 text-[10px] font-semibold text-slate-300">
@@ -375,7 +387,7 @@ function DocumentPreview({
         {isProcessing ? (
           <div className="text-center py-10">
             <div className="mx-auto size-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent mb-3" />
-            <p className="text-sm font-medium text-slate-300">Ejecutando OCR y Análisis de Documento...</p>
+            <p className="text-sm font-medium text-slate-300">Ejecutando OCR y Extracción de Documento ({totalPages} págs)...</p>
           </div>
         ) : (
           <div className="relative aspect-[0.72] w-full max-w-[420px] bg-slate-900 p-7 text-slate-100 shadow-2xl rounded-md border border-slate-700">
@@ -383,7 +395,7 @@ function DocumentPreview({
               <div className="h-3 w-40 rounded bg-slate-700 font-mono text-[10px] text-indigo-300 flex items-center px-1">
                 {fileName}
               </div>
-              <span className="text-[9px] text-slate-400">Documento original</span>
+              <span className="text-[9px] text-slate-400">Página 1 de {totalPages}</span>
             </div>
 
             {printedLines.length > 0 ? (
@@ -412,7 +424,7 @@ function DocumentPreview({
             ))}
 
             <div className="absolute bottom-4 left-7 right-7 border-t border-slate-800 pt-2 text-[9px] text-slate-400">
-              {fileName} · Documento listo para delimitación de plantilla
+              {fileName} · Listo para clasificar páginas 1 a {totalPages}
             </div>
           </div>
         )}
@@ -421,7 +433,7 @@ function DocumentPreview({
   );
 }
 
-function Metadata({ fileName, fileType, fileSize, docId }: { fileName: string; fileType: string; fileSize: number; docId: string | null }) {
+function Metadata({ fileName, fileType, fileSize, docId, totalPages }: { fileName: string; fileType: string; fileSize: number; docId: string | null; totalPages: number }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center gap-2">
@@ -436,6 +448,10 @@ function Metadata({ fileName, fileType, fileSize, docId }: { fileName: string; f
         <div>
           <dt className="text-slate-400">Formato</dt>
           <dd className="mt-1 font-medium text-slate-200">{fileType}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-400">Total de Páginas</dt>
+          <dd className="mt-1 font-semibold text-indigo-400">{totalPages} páginas</dd>
         </div>
         <div>
           <dt className="text-slate-400">Tamaño</dt>
@@ -456,7 +472,7 @@ function Metadata({ fileName, fileType, fileSize, docId }: { fileName: string; f
 function Study({
   zones,
   current,
-  pages,
+  totalPages,
   currentPage,
   setCurrentPage,
   selected,
@@ -466,24 +482,29 @@ function Study({
   setZones,
   resolvedAiPrompt,
   setResolvedAiPrompt,
+  showOnlyCurrentPageZones,
+  setShowOnlyCurrentPageZones,
 }: {
   zones: Zone[];
   current: Zone;
-  pages: number;
+  totalPages: number;
   currentPage: number;
   setCurrentPage: (p: number) => void;
   selected: number;
   setSelected: (n: number) => void;
-  addZoneOnPage: (pg: number, coords?: { x: number; y: number; w: number; h: number }) => void;
+  addZoneOnPage: (pg: number, coords?: { x: number; y: number; w: number; h: number }, defaultType?: string) => void;
   removeZone: (id: number) => void;
   setZones: (z: Zone[]) => void;
   resolvedAiPrompt: string | null;
   setResolvedAiPrompt: (msg: string | null) => void;
+  showOnlyCurrentPageZones: boolean;
+  setShowOnlyCurrentPageZones: (v: boolean) => void;
 }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
 
   const pageZones = useMemo(() => zones.filter(z => z.page === currentPage), [zones, currentPage]);
+  const displayedZones = useMemo(() => showOnlyCurrentPageZones ? pageZones : zones, [zones, pageZones, showOnlyCurrentPageZones]);
 
   const updateCurrentZone = (key: keyof Zone, val: any) => {
     setZones(zones.map(z => z.id === current.id ? { ...z, [key]: val } : z));
@@ -523,38 +544,99 @@ function Study({
   };
 
   return (
-    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3 sm:gap-0">
           <div>
-            <h2 className="font-semibold text-white">2. Estudio interactivo página por página</h2>
-            <p className="mt-1 text-sm text-slate-400">Arrastra sobre el lienzo para marcar zonas editables o estáticas.</p>
+            <h2 className="font-semibold text-white">2. Estudio interactivo 1 a 1 de cada página</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-400">Selecciona página por página lo que es editable y lo que es texto impreso estático.</p>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Quick Page Jump Controls */}
+          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(1)}
+              className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
+              title="Ir a Página 1"
+            >
+              1
+            </button>
             <button
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(currentPage - 1)}
-              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+              className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-xs text-slate-300 font-medium px-2">Página {currentPage} de {pages}</span>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-slate-400">Pág</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))}
+                className="w-12 text-center bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded py-0.5"
+              />
+              <span className="text-xs text-slate-400">de {totalPages}</span>
+            </div>
+
             <button
-              disabled={currentPage >= pages}
+              disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
-              className="rounded-md border border-slate-700 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+              className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
             >
               <ChevronRight size={16} />
+            </button>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
+              title={`Ir a Página ${totalPages}`}
+            >
+              {totalPages}
             </button>
           </div>
         </div>
 
-        <div className="mt-5 flex min-h-[480px] items-center justify-center rounded-md bg-slate-950 p-6 border border-slate-800">
+        {/* Action Buttons: Add Editable vs Add Static Text */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => addZoneOnPage(currentPage, undefined, 'Texto')}
+              className="rounded-md bg-indigo-600/90 hover:bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm flex items-center gap-1.5"
+            >
+              + Añadir Zona Editable (Pág {currentPage})
+            </button>
+            <button
+              onClick={() => addZoneOnPage(currentPage, undefined, 'Estatico')}
+              className="rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-medium text-emerald-400 flex items-center gap-1.5"
+            >
+              + Marcar Texto Estático No Editable
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowOnlyCurrentPageZones(!showOnlyCurrentPageZones)}
+            className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
+          >
+            <Filter size={13} /> {showOnlyCurrentPageZones ? `Filtro: Pág ${currentPage}` : 'Filtro: Ver Todas'}
+          </button>
+        </div>
+
+        <div className="mt-4 flex min-h-[460px] items-center justify-center rounded-md bg-slate-950 p-6 border border-slate-800">
           <div
             onMouseDown={handleCanvasMouseDown}
             onMouseUp={handleCanvasMouseUp}
             className="relative aspect-[0.72] w-full max-w-[440px] cursor-crosshair bg-slate-900 p-8 text-slate-100 shadow-2xl rounded-md border border-slate-700 select-none"
           >
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-6">
+              <span className="text-[10px] font-mono text-indigo-400 font-semibold">Página {currentPage} de {totalPages}</span>
+              <span className="text-[9px] text-slate-400">{pageZones.length} zonas en esta página</span>
+            </div>
+
             <div className="h-3 w-3/4 bg-slate-800" />
             <div className="mt-8 space-y-3">
               <div className="h-2 w-full bg-slate-800/80" />
@@ -567,30 +649,29 @@ function Study({
                 key={z.id}
                 onClick={(e) => { e.stopPropagation(); setSelected(z.id); }}
                 className={`absolute border-2 rounded transition-all text-left p-1 text-[9px] font-medium overflow-hidden ${
-                  selected === z.id
+                  z.type === 'Estatico'
+                    ? 'border-emerald-500/80 bg-emerald-500/20 text-emerald-300'
+                    : selected === z.id
                     ? 'border-indigo-500 bg-indigo-500/30 text-white shadow-lg z-10'
                     : 'border-indigo-400/60 bg-indigo-500/10 text-indigo-300 hover:border-indigo-400'
                 }`}
                 style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
               >
-                {z.label}
+                {z.type === 'Estatico' ? '🔒 ' : ''}{z.label}
               </button>
             ))}
 
-            <div className="absolute bottom-6 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400 flex justify-between">
-              <span>Página {currentPage} de {pages}</span>
-              <span>{pageZones.length} zonas en esta página</span>
+            <div className="absolute bottom-5 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400 flex justify-between">
+              <span>DocScan · Página {currentPage}</span>
+              <span>Arrastra con mouse/touch sobre la hoja</span>
             </div>
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
           <span>
-            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre el lienzo para delimitar una zona
+            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre la hoja para delimitar una nueva zona en la Página {currentPage}
           </span>
-          <button onClick={() => addZoneOnPage(currentPage)} className="font-medium text-indigo-400 hover:text-indigo-300">
-            + Nueva zona Pág {currentPage}
-          </button>
         </div>
       </div>
 
@@ -608,20 +689,20 @@ function Study({
           ) : (
             <>
               <p className="mt-3 text-xs leading-5 text-amber-100/80">
-                La IA detectó una zona dudosa en la página {currentPage}. ¿Es un campo de Firma o Texto?
+                La IA analiza la página {currentPage}. ¿Deseas clasificar la zona seleccionada como Editable o Texto Impreso Estático?
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   onClick={() => handleResolveAiPrompt('Firma')}
                   className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 font-medium"
                 >
-                  Firma
+                  Editable (Firma)
                 </button>
                 <button
-                  onClick={() => handleResolveAiPrompt('Texto')}
-                  className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 font-medium"
+                  onClick={() => handleResolveAiPrompt('Estatico')}
+                  className="rounded-md border border-emerald-500/50 bg-emerald-500/20 px-2 py-1.5 text-xs text-emerald-100 hover:bg-emerald-500/30 font-medium"
                 >
-                  Texto
+                  Texto Estático
                 </button>
               </div>
             </>
@@ -644,6 +725,18 @@ function Study({
 
             <div className="mt-4 space-y-3 text-xs">
               <div>
+                <label className="block text-slate-400 mb-1">Página Asignada (1 a {totalPages})</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={current.page}
+                  onChange={(e) => updateCurrentZone('page', Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))}
+                  className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-white"
+                />
+              </div>
+
+              <div>
                 <label className="block text-slate-400 mb-1">Nombre / Etiqueta del Campo</label>
                 <input
                   type="text"
@@ -654,7 +747,7 @@ function Study({
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Tipo de Campo</label>
+                <label className="block text-slate-400 mb-1">Clasificación / Tipo de Zona</label>
                 <select
                   value={current.type}
                   onChange={(e) => updateCurrentZone('type', e.target.value)}
@@ -664,7 +757,7 @@ function Study({
                   <option value="Fecha">Editable: Fecha</option>
                   <option value="Firma">Editable: Firma</option>
                   <option value="Casilla">Editable: Casilla [ ]</option>
-                  <option value="Estatico">Texto Estático Impreso (No Editable)</option>
+                  <option value="Estatico">Texto Estático Impreso (No Editable / Preservado)</option>
                 </select>
               </div>
 
@@ -684,23 +777,25 @@ function Study({
         {/* Zones list */}
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white text-sm">Zonas Marcadas ({zones.length})</h3>
+            <h3 className="font-semibold text-white text-sm">Zonas Clasificadas ({displayedZones.length})</h3>
             <span className="text-[10px] text-indigo-400">Pág {currentPage}: {pageZones.length}</span>
           </div>
           <div className="mt-4 space-y-2 max-h-[220px] overflow-y-auto">
-            {zones.map((z) => (
+            {displayedZones.map((z) => (
               <button
                 key={z.id}
                 onClick={() => { setCurrentPage(z.page); setSelected(z.id); }}
                 className={`flex w-full items-center justify-between rounded-md border p-2.5 text-left text-xs ${
                   selected === z.id
                     ? 'border-indigo-500 bg-indigo-500/20 text-white font-medium'
+                    : z.type === 'Estatico'
+                    ? 'border-emerald-900/60 bg-emerald-950/20 text-emerald-300'
                     : 'border-slate-800 hover:bg-slate-800/60 text-slate-300'
                 }`}
               >
                 <span>
-                  <span className="block font-medium">{z.label}</span>
-                  <span className="mt-0.5 block text-[10px] text-slate-400">Pág {z.page} · {z.type}</span>
+                  <span className="block font-medium">{z.type === 'Estatico' ? '🔒 ' : ''}{z.label}</span>
+                  <span className="mt-0.5 block text-[10px] text-slate-400">Pág {z.page} de {totalPages} · {z.type}</span>
                 </span>
                 <ChevronRight size={14} className="text-slate-400" />
               </button>
@@ -718,39 +813,41 @@ function Generation({
   exportFormat,
   setExportFormat,
   handleExport,
+  totalPages,
 }: {
   zones: Zone[];
   setStep: (n: number) => void;
   exportFormat: 'docx' | 'xlsx' | 'pdf';
   setExportFormat: (f: 'docx' | 'xlsx' | 'pdf') => void;
   handleExport: () => void;
+  totalPages: number;
 }) {
   return (
     <section className="mx-auto max-w-4xl">
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">3. Campos y generación de plantilla</h2>
-            <p className="mt-1 text-sm text-slate-400">Revisa la lista de campos antes de descargar tu plantilla final.</p>
+            <h2 className="text-lg font-semibold text-white">3. Campos y generación de plantilla ({totalPages} páginas)</h2>
+            <p className="mt-1 text-sm text-slate-400">Revisa la lista de campos clasificados página por página antes de descargar.</p>
           </div>
           <button onClick={() => setStep(2)} className="text-xs text-slate-400 hover:text-white">
             <ChevronLeft size={14} className="mr-1 inline" /> Volver al estudio
           </button>
         </div>
 
-        <div className="mt-6 divide-y divide-slate-800 rounded-md border border-slate-800 bg-slate-950">
+        <div className="mt-6 divide-y divide-slate-800 rounded-md border border-slate-800 bg-slate-950 max-h-[350px] overflow-y-auto">
           {zones.map((z) => (
             <div key={z.id} className="flex items-center justify-between gap-4 p-4">
               <div className="flex items-center gap-3">
-                <span className="flex size-8 items-center justify-center rounded-md bg-slate-800 text-indigo-400">
+                <span className={`flex size-8 items-center justify-center rounded-md ${z.type === 'Estatico' ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-800 text-indigo-400'}`}>
                   {z.type === 'Firma' ? <MousePointer2 size={15} /> : <FileText size={15} />}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-slate-200">{z.label}</p>
-                  <p className="text-xs text-slate-400">{z.note} · Página {z.page}</p>
+                  <p className="text-sm font-medium text-slate-200">{z.type === 'Estatico' ? '🔒 ' : ''}{z.label}</p>
+                  <p className="text-xs text-slate-400">{z.note} · Página {z.page} de {totalPages}</p>
                 </div>
               </div>
-              <span className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-300">
+              <span className={`rounded-md border px-2 py-1 text-[10px] ${z.type === 'Estatico' ? 'border-emerald-800 text-emerald-300 bg-emerald-950/40' : 'border-slate-700 bg-slate-900 text-slate-300'}`}>
                 {z.type}
               </span>
             </div>
