@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import { DocscanWorkspace, SampleDocData } from './DocscanWorkspace';
 import { RealPdfViewer } from './RealPdfViewer';
 
@@ -550,140 +550,210 @@ function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; 
 
 function How({ start, back, step, setStep }: { start: () => void; back: () => void; step: number; setStep: (n: number) => void }) {
   const current = tutorialSteps[step] || tutorialSteps[0];
+  const activeStepRef = useRef<HTMLButtonElement>(null);
+  const mainCardRef = useRef<HTMLDivElement>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // AUTO-SCROLL AL PASO ACTIVO
+  useEffect(() => {
+    if (activeStepRef.current) {
+      activeStepRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    if (mainCardRef.current && window.innerWidth < 768) {
+      mainCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [step]);
+
   return (
-    <main className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10">
-      <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white mb-4 sm:mb-6">
-        <ArrowLeft size={15} className="mr-1 inline" /> Volver al inicio
-      </button>
+    <main className="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-8 min-h-[calc(100vh-4rem)] flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-3 sm:mb-5">
+          <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white flex items-center">
+            <ArrowLeft size={15} className="mr-1 inline" /> Volver al inicio
+          </button>
+          
+          {/* SELECTOR DESPLEGABLE COMPACTO EN MÓVIL */}
+          <div className="relative sm:hidden">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-indigo-300 font-medium"
+            >
+              Paso {step + 1}: {current.title} <ChevronDown size={14} />
+            </button>
 
-      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 max-h-[220px] sm:max-h-[350px] lg:max-h-[700px] overflow-y-auto">
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Guía completa</p>
-          <p className="mt-1 text-xs sm:text-sm text-slate-400">{step + 1} de {tutorialSteps.length} etapas</p>
-          <div className="mt-4 space-y-1">
-            {tutorialSteps.map((item, i) => (
-              <button
-                key={item.title}
-                onClick={() => setStep(i)}
-                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs ${
-                  i === step ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/50'
-                }`}
-              >
-                <span
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] ${
-                    i < step ? 'border-emerald-500 text-emerald-400' : 'border-slate-700'
-                  }`}
+            {dropdownOpen && (
+              <div className="absolute right-0 top-9 z-50 w-60 max-h-64 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900 p-2 shadow-2xl">
+                {tutorialSteps.map((item, i) => (
+                  <button
+                    key={item.title}
+                    onClick={() => { setStep(i); setDropdownOpen(false); }}
+                    className={`flex w-full items-center justify-between rounded px-2.5 py-1.5 text-left text-xs ${
+                      i === step ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="truncate">{i + 1}. {item.title}</span>
+                    {i < step && <Check size={12} className="text-emerald-400 shrink-0 ml-1" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-5 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
+          
+          {/* BARRA LATERAL AUTO-SCROLL DE PASOS (RESPONSIVA & AUTO-FOCUS) */}
+          <aside className="hidden sm:block rounded-xl border border-slate-800 bg-slate-900 p-4 max-h-[480px] overflow-y-auto scroll-smooth">
+            <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Guía completa</p>
+            <p className="mt-0.5 text-xs text-slate-400">{step + 1} de {tutorialSteps.length} etapas</p>
+            
+            <div className="mt-3 space-y-1">
+              {tutorialSteps.map((item, i) => {
+                const isActive = i === step;
+                return (
+                  <button
+                    key={item.title}
+                    ref={isActive ? activeStepRef : null}
+                    onClick={() => setStep(i)}
+                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition-all ${
+                      isActive
+                        ? 'bg-indigo-600 text-white font-semibold shadow-md ring-1 ring-indigo-400'
+                        : i < step
+                        ? 'text-slate-300 hover:bg-slate-800/80'
+                        : 'text-slate-400 hover:bg-slate-800/40'
+                    }`}
+                  >
+                    <span
+                      className={`flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] ${
+                        i < step ? 'border-emerald-500 bg-emerald-950 text-emerald-400 font-bold' : isActive ? 'border-white text-white font-bold' : 'border-slate-700'
+                      }`}
+                    >
+                      {i < step ? <Check size={11} /> : i + 1}
+                    </span>
+                    <span className="truncate">{item.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* SECCIÓN PRINCIPAL TARJETA DE PASO (AUTO-FOCUS) */}
+          <section ref={mainCardRef}>
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Cómo funciona · paso {step + 1} de 20</p>
+                <h1 className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">{current.title}</h1>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  disabled={step === 0}
+                  onClick={() => setStep(step - 1)}
+                  className="rounded-md border border-slate-800 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+                  title="Paso Anterior"
                 >
-                  {i < step ? <Check size={11} /> : i + 1}
-                </span>
-                <span className="truncate">{item.title}</span>
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        <section>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Cómo funciona · paso {step + 1}</p>
-              <h1 className="mt-1 sm:mt-2 text-2xl sm:text-4xl font-semibold tracking-tight text-white">{current.title}</h1>
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  disabled={step === tutorialSteps.length - 1}
+                  onClick={() => setStep(step + 1)}
+                  className="rounded-md bg-indigo-600 p-2 text-white disabled:opacity-30 hover:bg-indigo-500 shadow-sm"
+                  title="Siguiente Paso"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
-            <div className="hidden gap-1 sm:flex">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 w-8 sm:w-10 rounded-sm ${i <= Math.floor(step / 4) ? 'bg-indigo-500' : 'bg-slate-800'}`}
-                />
-              ))}
-            </div>
-          </div>
 
-          <div className="mt-5 sm:mt-7 grid gap-5 xl:grid-cols-[1fr_280px]">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-8">
-              <div className="flex min-h-[340px] sm:min-h-[390px] flex-col justify-between">
+            <div className="grid gap-5 xl:grid-cols-[1fr_260px]">
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-6 shadow-xl flex flex-col justify-between min-h-[360px]">
                 <div>
-                  <span className="flex size-10 sm:size-11 items-center justify-center rounded-lg bg-slate-800 text-indigo-400">
-                    <Sparkles size={20} />
-                  </span>
-                  <p className="mt-5 sm:mt-7 max-w-2xl text-base sm:text-lg leading-7 sm:leading-8 text-slate-300">{current.summary}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-400">
+                      <Sparkles size={18} />
+                    </span>
+                    <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Etapa {step + 1}</span>
+                  </div>
+
+                  <p className="mt-4 text-sm sm:text-base leading-6 sm:leading-7 text-slate-200">{current.summary}</p>
                   
                   {/* DYNAMIC WHAT HAPPENS BOX */}
-                  <div className="mt-5 sm:mt-7 rounded-lg border border-slate-800 bg-slate-950 p-4 sm:p-5">
+                  <div className="mt-5 rounded-lg border border-slate-800 bg-slate-950 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Qué ocurre en esta etapa</p>
-                    <p className="mt-2 sm:mt-3 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
+                    <p className="mt-2 text-xs sm:text-sm leading-5 text-slate-300">
                       {current.whatHappens}
                     </p>
-                    <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-3">
-                      <div className="rounded-md border border-slate-800 bg-slate-900 p-2.5 sm:p-3">
-                        <p className="text-[10px] sm:text-xs text-slate-400">Entrada</p>
-                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.input}</p>
+                    <div className="mt-4 grid gap-2.5 grid-cols-1 sm:grid-cols-3">
+                      <div className="rounded-md border border-slate-800 bg-slate-900 p-2.5">
+                        <p className="text-[10px] text-slate-400">Entrada</p>
+                        <p className="mt-0.5 text-xs font-medium text-white truncate">{current.input}</p>
                       </div>
-                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-2.5 sm:p-3">
-                        <p className="text-[10px] sm:text-xs text-indigo-400">Acción</p>
-                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.action}</p>
+                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-2.5">
+                        <p className="text-[10px] text-indigo-400">Acción</p>
+                        <p className="mt-0.5 text-xs font-medium text-white truncate">{current.action}</p>
                       </div>
-                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-2.5 sm:p-3">
-                        <p className="text-[10px] sm:text-xs text-emerald-400">Resultado</p>
-                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium text-white truncate">{current.output}</p>
+                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-2.5">
+                        <p className="text-[10px] text-emerald-400">Resultado</p>
+                        <p className="mt-0.5 text-xs font-medium text-white truncate">{current.output}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 sm:mt-8 flex items-center justify-between border-t border-slate-800 pt-4 sm:pt-5">
+                <div className="mt-6 flex items-center justify-between border-t border-slate-800 pt-4">
                   <button
                     disabled={step === 0}
                     onClick={() => setStep(step - 1)}
-                    className="rounded-md border border-slate-800 px-3 py-2 text-xs sm:text-sm text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+                    className="rounded-md border border-slate-800 px-3.5 py-2 text-xs font-medium text-slate-300 disabled:opacity-30 hover:bg-slate-800 flex items-center gap-1"
                   >
-                    <ChevronLeft size={15} className="mr-1 inline" /> Anterior
+                    <ChevronLeft size={15} /> Anterior
                   </button>
                   {step === tutorialSteps.length - 1 ? (
                     <button
                       onClick={start}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1"
                     >
-                      Probar DocScan <ArrowRight size={15} className="ml-1 inline" />
+                      Probar DocScan <ArrowRight size={15} />
                     </button>
                   ) : (
                     <button
                       onClick={() => setStep(step + 1)}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-500 shadow-md"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1"
                     >
-                      Siguiente <ChevronRight size={15} className="ml-1 inline" />
+                      Siguiente ({step + 2}/20) <ChevronRight size={15} />
                     </button>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* DYNAMIC EXPECTED RESULT ASIDE */}
-            <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Resultado esperado</p>
-              <div className="mt-4 sm:mt-5 rounded-md border border-slate-800 bg-slate-950 p-3.5 sm:p-4">
-                <div className="h-2 w-28 rounded bg-slate-800" />
-                <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
-                  <div className="h-2 w-full rounded bg-slate-800" />
-                  <div className="h-7 sm:h-8 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-xs text-indigo-300 font-medium truncate">
-                    {current.action}
+              {/* DYNAMIC EXPECTED RESULT ASIDE */}
+              <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 flex flex-col justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Resultado esperado</p>
+                  <div className="mt-3 rounded-md border border-slate-800 bg-slate-950 p-3">
+                    <div className="h-2 w-24 rounded bg-slate-800 mb-3" />
+                    <div className="space-y-2">
+                      <div className="h-7 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-2 text-[11px] text-indigo-300 font-medium truncate">
+                        {current.action}
+                      </div>
+                      <div className="h-7 rounded border border-slate-800 flex items-center px-2 text-[11px] text-slate-400 truncate">
+                        {current.input}
+                      </div>
+                      <div className="h-7 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-[11px] text-emerald-300 font-medium truncate">
+                        {current.output}
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-7 sm:h-8 rounded border border-slate-800 flex items-center px-2 text-xs text-slate-500 truncate">
-                    {current.input}
-                  </div>
-                  <div className="h-7 sm:h-8 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-2 text-xs text-emerald-300 font-medium truncate">
-                    {current.output}
-                  </div>
+                  <p className="mt-3 text-xs leading-5 text-slate-300">
+                    {current.resultText}
+                  </p>
                 </div>
-              </div>
-              <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-300">
-                {current.resultText}
-              </p>
-              <div className="mt-4 sm:mt-5 flex items-center gap-2 text-xs text-emerald-400">
-                <Check size={14} className="shrink-0" /> Sin alterar el documento impreso original
-              </div>
-            </aside>
-          </div>
-        </section>
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400 font-medium border-t border-slate-800/80 pt-3">
+                  <Check size={14} className="shrink-0" /> Documento original intacto
+                </div>
+              </aside>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
