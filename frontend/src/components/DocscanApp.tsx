@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import { DocscanWorkspace, SampleDocData } from './DocscanWorkspace';
-import { decalogoPdfSample } from '../data/decalogoSample';
 
 type View = 'home' | 'how' | 'loading' | 'upload' | 'workspace';
 type Kind = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'JPG';
@@ -67,7 +66,7 @@ const tutorialSteps: StepDetail[] = [
     input: 'Archivo local',
     action: 'Hash SHA-256 & Validación',
     output: 'Registro seguro en servidor',
-    resultText: 'Documento verificado e inmune a alterations no autorizadas.'
+    resultText: 'Documento verificado e inmune a alteraciones no autorizadas.'
   },
   {
     title: 'Lectura original',
@@ -153,7 +152,7 @@ const tutorialSteps: StepDetail[] = [
   {
     title: 'Comentarios',
     summary: 'Añade ejemplos, reglas, instrucciones y contexto para que cualquier persona sepa cómo completar el campo.',
-    whatHappens: 'Se agregan notas explicativas y ejemplos para guiar a la persona que completará el formulario final.',
+    whatHappens: 'Se agregan notas explicativas y ejemplos para guiar a la persona que completará el campo.',
     input: 'Texto de ayuda / Tooltip',
     action: 'Asociación de ayuda al usuario',
     output: 'Guía interactiva de campo',
@@ -237,12 +236,6 @@ export function DocscanApp() {
   const handleSelectedFile = (file: File) => {
     setActiveFile(file);
     setActiveSampleData(null);
-    setView('workspace');
-  };
-
-  const handleLoadSamplePdf = () => {
-    setActiveFile(null);
-    setActiveSampleData(decalogoPdfSample);
     setView('workspace');
   };
 
@@ -345,10 +338,10 @@ export function DocscanApp() {
         </div>
       )}
 
-      {view === 'home' && <Landing start={() => go('loading')} onLoadSample={handleLoadSamplePdf} how={() => go('how')} login={() => setLogin(true)} />}
+      {view === 'home' && <Landing start={() => go('loading')} how={() => go('how')} login={() => setLogin(true)} />}
       {view === 'how' && <How start={() => go('loading')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
       {view === 'loading' && <Loading />}
-      {view === 'upload' && <UploadView start={(f) => handleSelectedFile(f)} onLoadSample={handleLoadSamplePdf} back={() => go('home')} />}
+      {view === 'upload' && <UploadView start={(f) => handleSelectedFile(f)} back={() => go('home')} />}
       {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('upload')} />}
 
       {login && <LoginModal close={() => setLogin(false)} />}
@@ -356,10 +349,10 @@ export function DocscanApp() {
   );
 }
 
-function Landing({ start, onLoadSample, how, login }: { start: () => void; onLoadSample: () => void; how: () => void; login: () => void }) {
+function Landing({ start, how, login }: { start: () => void; how: () => void; login: () => void }) {
   return (
     <main>
-      <section className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-14 px-4 sm:px-6 pb-16 sm:pb-24 pt-12 sm:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pt-28">
+      <section className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-14 px-4 sm:px-6 pb-16 sm:pb-24 pt-12 sm:pt-20 lg:grid-cols-[1fr_1fr] lg:pt-24">
         <div>
           <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-400">
             <ShieldCheck size={14} className="text-indigo-400 shrink-0" /> Gratis para empezar · Sin registro obligatorio
@@ -378,12 +371,6 @@ function Landing({ start, onLoadSample, how, login }: { start: () => void; onLoa
               Comenzar gratis <ArrowRight size={16} className="ml-2 inline" />
             </button>
             <button
-              onClick={onLoadSample}
-              className="rounded-md bg-purple-600/90 hover:bg-purple-600 px-5 py-3 text-sm font-medium text-white shadow-md transition-all text-center justify-center flex items-center"
-            >
-              📂 Cargar PDF Real "Decálogo Transparencia" (51 págs)
-            </button>
-            <button
               onClick={how}
               className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200 text-center justify-center flex items-center"
             >
@@ -394,7 +381,9 @@ function Landing({ start, onLoadSample, how, login }: { start: () => void; onLoa
             Iniciar sesión opcionalmente para guardar tu trabajo
           </button>
         </div>
-        <PreviewCard onLoadSample={onLoadSample} />
+
+        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (ORIGINAL PDF VS PLANTILLA RECONSTRUIDA) */}
+        <PreviewCard />
       </section>
 
       <section className="border-y border-slate-800 bg-slate-900/40">
@@ -443,62 +432,113 @@ function Landing({ start, onLoadSample, how, login }: { start: () => void; onLoa
   );
 }
 
-function PreviewCard({ onLoadSample }: { onLoadSample: () => void }) {
+function PreviewCard() {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3.5 sm:p-4 shadow-2xl">
-      <div className="flex items-center justify-between border-b border-slate-800 px-2 sm:px-3 pb-3 sm:pb-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4 shadow-2xl overflow-hidden">
+      <div className="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
         <div className="flex items-center gap-2">
           <ScanLine size={15} className="text-indigo-400 shrink-0" />
-          <span className="text-xs font-medium text-slate-200">Plantilla reconstruida (PDF Real 51 Págs)</span>
+          <span className="text-xs font-semibold text-slate-200">Demostración Lado a Lado</span>
         </div>
-        <span className="text-[10px] text-emerald-400">Apariencia preservada</span>
+        <span className="text-[10px] text-emerald-400 font-medium">100% Fidelidad al Impreso</span>
       </div>
-      <div className="mt-4 sm:mt-5 rounded-lg border border-slate-800 bg-slate-950 p-4 sm:p-5">
-        <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-4">
-          <span className="text-[10px] font-mono text-purple-300 font-semibold truncate max-w-[220px]">
-            Decalogo_Acceso_Documentos_Archivos_Publicos.pdf
-          </span>
-          <span className="text-[9px] text-slate-400">Página 1 de 51</span>
-        </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
         
-        <div className="space-y-1.5">
-          <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-tight leading-tight">
-            DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
-          </h3>
-          <p className="text-[10px] text-purple-300 font-semibold">
-            PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
-          </p>
-          <p className="text-[9px] text-slate-400 italic">
-            Mesa de Trabajo de Archivos de la Administración Local (MTAAL)
-          </p>
+        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (APACHE TIKA SAMPLE) */}
+        <div className="rounded border border-slate-700 bg-slate-900 p-2.5 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+          <div>
+            <div className="flex justify-between items-center text-[7px] font-mono text-slate-400 pb-1 border-b border-slate-800">
+              <span className="truncate max-w-[90px] font-semibold text-slate-300">Apache Tika - Apache Tika</span>
+              <span className="text-indigo-400">http://incubator.apache.org/tika/</span>
+            </div>
+
+            {/* Red Border Title Box (Tika - Content Analysis Toolkit) */}
+            <div className="mt-2.5 p-1 border border-red-800/80 rounded bg-red-950/20 text-center">
+              <h4 className="text-[9px] font-bold text-red-400 font-serif leading-tight">
+                Tika - Content Analysis Toolkit
+              </h4>
+            </div>
+
+            <p className="mt-2 text-[7px] text-slate-300 leading-normal font-sans">
+              Apache Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
+            </p>
+
+            {/* Red Border Section Title (Latest News) */}
+            <div className="mt-3 p-1 border border-red-800/80 rounded bg-red-950/20">
+              <h5 className="text-[8px] font-bold text-red-400 font-serif">
+                Latest News
+              </h5>
+            </div>
+
+            <div className="mt-2 p-1 border border-slate-800 rounded bg-slate-950 text-[7px] text-slate-400">
+              <span className="font-semibold text-slate-300">March 22nd, 2007: Apache Tika project started</span>
+              <p className="text-[6.5px] mt-0.5 leading-tight">The Apache Tika project was formally started when the Tika proposal was accepted by the Apache Incubator PMC.</p>
+            </div>
+          </div>
+
+          <div className="text-[6.5px] text-slate-400 border-t border-slate-800 pt-1 flex justify-between">
+            <span>DOCUMENTO PDF FUENTE</span>
+            <span className="text-slate-400">Sin Modificaciones</span>
+          </div>
         </div>
 
-        <div className="mt-5 grid gap-2.5">
-          <div className="h-10 rounded border border-emerald-500/80 bg-emerald-500/10 flex items-center px-3 text-xs text-emerald-300 font-medium">
-            🔒 Texto estático impreso no modificado (Título Decálogo)
-          </div>
-          <div className="h-9 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-3 text-xs text-indigo-300">
-            Campo editable: Entidad Emisora (MTAAL)
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="h-8 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-400">
-              Fecha (23/09/2024)
+        {/* HOJA DERECHA: PLANTILLA EDITABLE RECONSTRUIDA */}
+        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2.5 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+          <div>
+            <div className="flex justify-between items-center text-[7px] font-mono text-emerald-400 pb-1 border-b border-slate-800 font-semibold">
+              <span className="truncate max-w-[90px]">Plantilla_Editable.pdf</span>
+              <span className="text-emerald-400">Campos Llenables</span>
             </div>
-            <div className="h-8 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-400">
-              Firma Autenticador
+
+            {/* Static Preserved Title Box */}
+            <div className="mt-2.5 p-1 border border-emerald-600/80 rounded bg-emerald-950/30 text-center">
+              <h4 className="text-[9px] font-bold text-emerald-300 font-serif leading-tight">
+                🔒 Tika - Content Analysis Toolkit (Preservado)
+              </h4>
             </div>
+
+            {/* Editable Field Input 1 */}
+            <div className="mt-2 text-[7px]">
+              <span className="text-indigo-300 block mb-0.5">Editable: Descripción Toolkit:</span>
+              <input
+                type="text"
+                readOnly
+                value="Apache Tika is a toolkit for detecting..."
+                className="w-full bg-slate-950 border border-indigo-500/70 text-indigo-200 rounded p-1 text-[7px]"
+              />
+            </div>
+
+            {/* Static Preserved Section Title */}
+            <div className="mt-2.5 p-1 border border-emerald-600/80 rounded bg-emerald-950/30">
+              <h5 className="text-[8px] font-bold text-emerald-300 font-serif">
+                🔒 Latest News (Texto Impreso Intacto)
+              </h5>
+            </div>
+
+            {/* Editable Date Field & Signature */}
+            <div className="mt-2 text-[7px] space-y-1">
+              <div className="flex items-center justify-between bg-slate-950 border border-indigo-500/70 p-1 rounded text-indigo-300">
+                <span>Fecha: 2007-03-22</span>
+                <span className="text-[6px] text-slate-400">Picker</span>
+              </div>
+              <div className="bg-indigo-950/40 border border-indigo-500/70 p-1 rounded text-indigo-200 flex items-center justify-between">
+                <span>✍️ Firma Aprobación PMC</span>
+                <span className="text-[6px] text-indigo-400">Manuscrita</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-[6.5px] text-emerald-400 border-t border-slate-800 pt-1 flex justify-between font-medium">
+            <span>RECONSTRUCCIÓN EDITABLE</span>
+            <span>Fidelidad 100%</span>
           </div>
         </div>
 
-        <button
-          onClick={onLoadSample}
-          className="mt-4 w-full rounded bg-indigo-600/90 hover:bg-indigo-600 py-2 text-xs font-medium text-white shadow-sm transition-all"
-        >
-          📂 Abrir PDF Real "Decálogo Transparencia" en Workspace (51 págs)
-        </button>
       </div>
-      <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-slate-400">
-        <Check size={14} className="text-emerald-400 shrink-0" /> Solo cambia lo que indicaste · Texto impreso original intacto
+
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 px-1">
+        <Check size={14} className="text-emerald-400 shrink-0" /> Preserva el formato original e inserta controles editables sobre las zonas indicadas
       </div>
     </div>
   );
@@ -674,7 +714,7 @@ function Loading() {
   );
 }
 
-function UploadView({ start, onLoadSample, back }: { start: (file: File) => void; onLoadSample: () => void; back: () => void }) {
+function UploadView({ start, back }: { start: (file: File) => void; back: () => void }) {
   const [dragOver, setDragOver] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -718,13 +758,6 @@ function UploadView({ start, onLoadSample, back }: { start: (file: File) => void
             <span className="mt-1.5 sm:mt-2 text-xs text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
             <input className="sr-only" type="file" accept=".docx,.pdf,.xlsx,.pptx,image/*" onChange={handleFileChange} />
           </label>
-
-          <button
-            onClick={onLoadSample}
-            className="w-full rounded-lg border border-purple-500/50 bg-purple-950/30 hover:bg-purple-950/50 p-3 text-xs text-purple-200 font-medium flex items-center justify-center gap-2 transition-all"
-          >
-            📂 Probar directamente con el PDF Real "Decálogo sobre Acceso a Archivos Públicos" (51 páginas)
-          </button>
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
