@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Grip, Layers3, Menu, MousePointer2, Plus, ScanLine, Settings2, Sparkles, Trash2, Upload, Filter } from 'lucide-react';
+import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Grip, Layers3, Menu, MousePointer2, Plus, ScanLine, Settings2, Sparkles, Trash2, Upload, Filter, Columns, Eye } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { DetectedField } from '../types/document';
 import { decalogoPdfSample } from '../data/decalogoSample';
@@ -59,6 +59,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
   const [totalPages, setTotalPages] = useState(sample ? sample.totalPages : 51);
   const [showOnlyCurrentPageZones, setShowOnlyCurrentPageZones] = useState(true);
   const [resolvedAiPrompt, setResolvedAiPrompt] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'split' | 'editable' | 'original'>('split');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const current = zones.find((zone) => zone.id === selected) ?? zones[0];
@@ -216,7 +217,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
                   step === 2 ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                 }`}
               >
-                <MousePointer2 size={16} /> Estudio ({totalPages} págs)
+                <Columns size={16} /> Estudio (2 Hojas Lado a Lado)
               </button>
               <button
                 onClick={() => setStep(3)}
@@ -246,7 +247,9 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-slate-400">Workspace / Plantillas</p>
-                <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Crear plantilla editable (1 a {totalPages} páginas)</h1>
+                <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">
+                  Comparación Lado a Lado: PDF Original vs Plantilla Editable ({totalPages} páginas)
+                </h1>
               </div>
               <button
                 onClick={() => setStep(Math.min(3, step + 1))}
@@ -257,7 +260,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
             </div>
 
             <div className="mt-6 flex max-w-2xl items-center gap-2">
-              {['Ingestión', 'Estudio', 'Generación'].map((label, index) => (
+              {['Ingestión', 'Estudio Lado a Lado', 'Generación'].map((label, index) => (
                 <div key={label} className="flex flex-1 items-center gap-2">
                   <span
                     className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
@@ -340,6 +343,9 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
                 setResolvedAiPrompt={setResolvedAiPrompt}
                 showOnlyCurrentPageZones={showOnlyCurrentPageZones}
                 setShowOnlyCurrentPageZones={setShowOnlyCurrentPageZones}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                fileName={fileName}
               />
             )}
 
@@ -511,6 +517,9 @@ function Study({
   setResolvedAiPrompt,
   showOnlyCurrentPageZones,
   setShowOnlyCurrentPageZones,
+  viewMode,
+  setViewMode,
+  fileName,
 }: {
   zones: Zone[];
   current: Zone;
@@ -526,6 +535,9 @@ function Study({
   setResolvedAiPrompt: (msg: string | null) => void;
   showOnlyCurrentPageZones: boolean;
   setShowOnlyCurrentPageZones: (v: boolean) => void;
+  viewMode: 'split' | 'editable' | 'original';
+  setViewMode: (v: 'split' | 'editable' | 'original') => void;
+  fileName: string;
 }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
@@ -575,60 +587,87 @@ function Study({
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3 sm:gap-0">
           <div>
-            <h2 className="font-semibold text-white">2. Estudio interactivo 1 a 1 de cada página</h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-400">Selecciona página por página lo que es editable y lo que es texto impreso estático.</p>
+            <h2 className="font-semibold text-white">2. Estudio comparativo de 2 hojas lado a lado</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-400">PDF Original intacto (Izquierda) vs Plantilla Editable Reconstruida (Derecha).</p>
           </div>
 
-          {/* Quick Page Jump Controls */}
-          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(1)}
-              className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
-              title="Ir a Página 1"
-            >
-              1
-            </button>
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-              className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-slate-400">Pág</span>
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                value={currentPage}
-                onChange={(e) => setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))}
-                className="w-12 text-center bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded py-0.5"
-              />
-              <span className="text-xs text-slate-400">de {totalPages}</span>
+          {/* View Mode Switch & Page Navigator */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+              <button
+                onClick={() => setViewMode('split')}
+                className={`px-2.5 py-1 text-xs font-medium rounded ${viewMode === 'split' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                title="Ver 2 Hojas Lado a Lado"
+              >
+                <Columns size={13} className="inline mr-1" /> 2 Hojas
+              </button>
+              <button
+                onClick={() => setViewMode('editable')}
+                className={`px-2.5 py-1 text-xs font-medium rounded ${viewMode === 'editable' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                title="Ver sólo Plantilla Editable"
+              >
+                <FileText size={13} className="inline mr-1" /> Plantilla
+              </button>
+              <button
+                onClick={() => setViewMode('original')}
+                className={`px-2.5 py-1 text-xs font-medium rounded ${viewMode === 'original' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                title="Ver sólo PDF Original"
+              >
+                <Eye size={13} className="inline mr-1" /> Original
+              </button>
             </div>
 
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-              className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
-            >
-              <ChevronRight size={16} />
-            </button>
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(totalPages)}
-              className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
-              title={`Ir a Página ${totalPages}`}
-            >
-              {totalPages}
-            </button>
+            {/* Quick Page Jump Controls */}
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(1)}
+                className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
+                title="Ir a Página 1"
+              >
+                1
+              </button>
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-400">Pág</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))}
+                  className="w-12 text-center bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded py-0.5"
+                />
+                <span className="text-xs text-slate-400">de {totalPages}</span>
+              </div>
+
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="rounded p-1 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                className="text-[11px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded border border-slate-800 disabled:opacity-30"
+                title={`Ir a Página ${totalPages}`}
+              >
+                {totalPages}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons: Add Editable vs Add Static Text */}
+        {/* Action Buttons */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
           <div className="flex items-center gap-2">
             <button
@@ -653,74 +692,149 @@ function Study({
           </button>
         </div>
 
-        <div className="mt-4 flex min-h-[460px] items-center justify-center rounded-md bg-slate-950 p-6 border border-slate-800">
-          <div
-            onMouseDown={handleCanvasMouseDown}
-            onMouseUp={handleCanvasMouseUp}
-            className="relative aspect-[0.72] w-full max-w-[440px] cursor-crosshair bg-slate-900 p-8 text-slate-100 shadow-2xl rounded-md border border-slate-700 select-none"
-          >
-            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-4">
-              <span className="text-[10px] font-mono text-indigo-400 font-semibold">PDF REAL · Página {currentPage} de {totalPages}</span>
-              <span className="text-[9px] text-slate-400">{pageZones.length} zonas en esta página</span>
-            </div>
-
-            {currentPage === 1 ? (
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-tight leading-tight">
-                  DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
-                </h3>
-                <p className="text-[10px] text-purple-300 font-semibold">
-                  PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
-                </p>
-                <p className="text-[9px] text-slate-400 italic">
-                  Mesa de Trabajo de Archivos de la Administración Local (MTAAL)
-                </p>
-              </div>
-            ) : currentPage === 2 ? (
-              <div className="space-y-1.5 text-[9px] text-slate-300">
-                <p className="font-semibold text-indigo-300">Versión 1. 23 de septiembre de 2024</p>
-                <p>© Del texto: Francisco Fernández Cuesta (Ayuntamiento de Madrid)</p>
-                <p>Francesc Giménez Martín (Ajuntament de Sant Cugat del Vallès)</p>
-                <p>© De esta edición: ANABAD</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="h-2.5 w-3/4 bg-slate-800 rounded font-mono text-[9px] text-slate-300 flex items-center px-1">
-                  Sección {currentPage}: Texto normativo de transparencia
+        {/* DUAL CANVAS / SIDE-BY-SIDE VIEW CONTAINER */}
+        <div className="mt-4 flex min-h-[490px] items-center justify-center rounded-md bg-slate-950 p-4 sm:p-6 border border-slate-800 overflow-x-auto">
+          <div className={`grid gap-6 w-full ${viewMode === 'split' ? 'lg:grid-cols-2 max-w-[920px]' : 'max-w-[460px] mx-auto'}`}>
+            
+            {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF INTACTO */}
+            {(viewMode === 'split' || viewMode === 'original') && (
+              <div className="flex flex-col items-center">
+                <div className="mb-2 flex items-center gap-2 text-xs text-slate-400 font-medium">
+                  <span className="flex size-2 rounded-full bg-rose-500" />
+                  <span>Hoja 1: Documento PDF Original Intacto (Pág {currentPage})</span>
                 </div>
-                <div className="h-2 w-full bg-slate-800/80 rounded" />
-                <div className="h-2 w-5/6 bg-slate-800/80 rounded" />
-                <div className="h-2 w-4/5 bg-slate-800/80 rounded" />
+
+                <div
+                  onMouseDown={handleCanvasMouseDown}
+                  onMouseUp={handleCanvasMouseUp}
+                  className="relative aspect-[0.72] w-full cursor-crosshair bg-slate-900 p-6 text-slate-100 shadow-2xl rounded-md border border-rose-900/60 select-none"
+                >
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-3">
+                    <span className="text-[9px] font-mono text-rose-300 font-semibold truncate max-w-[200px]">{fileName}</span>
+                    <span className="text-[8px] text-slate-400">PDF Fuente Intacto</span>
+                  </div>
+
+                  {currentPage === 1 ? (
+                    <div className="space-y-2">
+                      <h3 className="text-[11px] font-bold text-purple-300 uppercase tracking-tight leading-tight">
+                        DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
+                      </h3>
+                      <p className="text-[10px] text-purple-200 font-semibold">
+                        PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
+                      </p>
+                      <div className="mt-8 pt-4 border-t border-slate-800 text-[8px] text-slate-400">
+                        <p className="font-semibold text-slate-300">Mesa de Trabajo de Archivos de la Administración Local</p>
+                        <p className="italic mt-0.5">de Archivos de Administración Local (MTAAL)</p>
+                      </div>
+                    </div>
+                  ) : currentPage === 2 ? (
+                    <div className="space-y-1 text-[8px] text-slate-300">
+                      <p className="font-semibold text-purple-300">Versión 1. 23 de septiembre de 2024</p>
+                      <p>© Del texto: Francisco Fernández Cuesta (Ayuntamiento de Madrid)</p>
+                      <p>Francesc Giménez Martín (Ajuntament de Sant Cugat del Vallès)</p>
+                      <p className="mt-2 font-semibold">© De esta edición: ANABAD</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-[8px] text-slate-300">
+                      <p className="font-semibold text-indigo-300">Sección {currentPage}. Transparencia y Archivos Públicos</p>
+                      <p className="leading-relaxed text-slate-400">
+                        La Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno...
+                      </p>
+                      <div className="h-2 w-full bg-slate-800/80 rounded mt-4" />
+                      <div className="h-2 w-5/6 bg-slate-800/80 rounded" />
+                    </div>
+                  )}
+
+                  {pageZones.map((z) => (
+                    <div
+                      key={z.id}
+                      className="absolute border border-indigo-400/80 bg-indigo-500/10 rounded flex items-center px-1 text-[8px] text-indigo-300 font-medium pointer-events-none"
+                      style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
+                    >
+                      {z.label}
+                    </div>
+                  ))}
+
+                  <div className="absolute bottom-4 left-6 right-6 border-t border-slate-800 pt-1.5 text-[8px] text-slate-400 flex justify-between">
+                    <span>PDF Original · Pág {currentPage}</span>
+                    <span>Arrastra para delimitar</span>
+                  </div>
+                </div>
               </div>
             )}
 
-            {pageZones.map((z) => (
-              <button
-                key={z.id}
-                onClick={(e) => { e.stopPropagation(); setSelected(z.id); }}
-                className={`absolute border-2 rounded transition-all text-left p-1 text-[9px] font-medium overflow-hidden ${
-                  z.type === 'Estatico'
-                    ? 'border-emerald-500/80 bg-emerald-500/20 text-emerald-300'
-                    : selected === z.id
-                    ? 'border-indigo-500 bg-indigo-500/30 text-white shadow-lg z-10'
-                    : 'border-indigo-400/60 bg-indigo-500/10 text-indigo-300 hover:border-indigo-400'
-                }`}
-                style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
-              >
-                {z.type === 'Estatico' ? '🔒 ' : ''}{z.label}
-              </button>
-            ))}
+            {/* HOJA DERECHA: PLANTILLA EDITABLE RECONSTRUIDA FIEL */}
+            {(viewMode === 'split' || viewMode === 'editable') && (
+              <div className="flex flex-col items-center">
+                <div className="mb-2 flex items-center gap-2 text-xs text-slate-400 font-medium">
+                  <span className="flex size-2 rounded-full bg-emerald-500" />
+                  <span>Hoja 2: Plantilla Reconstruida Editable (Pág {currentPage})</span>
+                </div>
 
-            <div className="absolute bottom-5 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400 flex justify-between">
-              <span>PDF Real · Página {currentPage} de {totalPages}</span>
-              <span>Arrastra sobre la hoja</span>
-            </div>
+                <div className="relative aspect-[0.72] w-full bg-slate-900 p-6 text-slate-100 shadow-2xl rounded-md border border-emerald-900/60 select-none">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-3">
+                    <span className="text-[9px] font-mono text-emerald-300 font-semibold truncate max-w-[200px]">Plantilla_Editable.pdf</span>
+                    <span className="text-[8px] text-emerald-400">Controles Activos</span>
+                  </div>
+
+                  {pageZones.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {pageZones.map((z) => (
+                        <div key={z.id} className="text-[9px]">
+                          <span className="text-slate-400 block mb-0.5">{z.label}:</span>
+                          {z.type === 'Estatico' ? (
+                            <div className="p-1.5 rounded bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 font-medium">
+                              🔒 {z.label} (Texto Impreso Intacto)
+                            </div>
+                          ) : z.type === 'Fecha' ? (
+                            <input
+                              type="date"
+                              defaultValue="2024-09-23"
+                              className="w-full bg-slate-950 border border-indigo-500/60 text-indigo-300 rounded p-1 text-[9px]"
+                            />
+                          ) : z.type === 'Firma' ? (
+                            <div className="p-2 rounded bg-indigo-950/40 border border-indigo-500/60 text-indigo-300 flex items-center justify-between">
+                              <span>✍️ Campo de Firma Manuscrita</span>
+                              <span className="text-[8px] text-slate-400">Trazado táctil/mouse</span>
+                            </div>
+                          ) : z.type === 'Casilla' ? (
+                            <label className="flex items-center gap-2 text-slate-200">
+                              <input type="checkbox" defaultChecked className="accent-indigo-500" />
+                              <span>{z.label}</span>
+                            </label>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder={`Ingresar ${z.label}...`}
+                              className="w-full bg-slate-950 border border-indigo-500/60 text-indigo-200 rounded p-1 text-[9px]"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="h-2.5 w-3/4 bg-slate-800 rounded font-mono text-[9px] text-slate-300 flex items-center px-1">
+                        Página {currentPage}: Esperando delimitación
+                      </div>
+                      <div className="h-2 w-full bg-slate-800/80 rounded" />
+                      <div className="h-2 w-5/6 bg-slate-800/80 rounded" />
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-4 left-6 right-6 border-t border-slate-800 pt-1.5 text-[8px] text-slate-400 flex justify-between">
+                    <span>Plantilla Reconstruida · Pág {currentPage}</span>
+                    <span className="text-emerald-400">Apariencia idéntica al impreso</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
           <span>
-            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre la hoja para delimitar una nueva zona en la Página {currentPage}
+            <Grip size={14} className="mr-1 inline text-indigo-400" /> Arrastra sobre la hoja izquierda para delimitar una nueva zona en la Página {currentPage}
           </span>
         </div>
       </div>
