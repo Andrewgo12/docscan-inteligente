@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import { DocscanWorkspace, SampleDocData } from './DocscanWorkspace';
+import { RealPdfViewer } from './RealPdfViewer';
 
 type View = 'home' | 'how' | 'loading' | 'upload' | 'workspace';
 type Kind = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'JPG';
@@ -382,7 +383,7 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
           </button>
         </div>
 
-        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (ORIGINAL PDF VS PLANTILLA RECONSTRUIDA) */}
+        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (RENDERIZADO CON PDF.JS NATIVO) */}
         <PreviewCard />
       </section>
 
@@ -438,48 +439,30 @@ function PreviewCard() {
       <div className="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
         <div className="flex items-center gap-2">
           <ScanLine size={15} className="text-indigo-400 shrink-0" />
-          <span className="text-xs font-semibold text-slate-200">Demostración Lado a Lado</span>
+          <span className="text-xs font-semibold text-slate-200">Demostración Lado a Lado (Renderizado PDF.js Real)</span>
         </div>
         <span className="text-[10px] text-emerald-400 font-medium">100% Fidelidad al Impreso</span>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
         
-        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (APACHE TIKA SAMPLE) */}
-        <div className="rounded border border-slate-700 bg-slate-900 p-2.5 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (RENDERIZADO CANVAS CON PDF.JS DE ARCHIVO REAL) */}
+        <div className="rounded border border-slate-700 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
           <div>
             <div className="flex justify-between items-center text-[7px] font-mono text-slate-400 pb-1 border-b border-slate-800">
-              <span className="truncate max-w-[90px] font-semibold text-slate-300">Apache Tika - Apache Tika</span>
-              <span className="text-indigo-400">http://incubator.apache.org/tika/</span>
+              <span className="truncate max-w-[90px] font-semibold text-slate-300">10_Tika_Test_Sample.pdf</span>
+              <span className="text-indigo-400">PDF.js Engine</span>
             </div>
 
-            {/* Red Border Title Box (Tika - Content Analysis Toolkit) */}
-            <div className="mt-2.5 p-1 border border-red-800/80 rounded bg-red-950/20 text-center">
-              <h4 className="text-[9px] font-bold text-red-400 font-serif leading-tight">
-                Tika - Content Analysis Toolkit
-              </h4>
-            </div>
-
-            <p className="mt-2 text-[7px] text-slate-300 leading-normal font-sans">
-              Apache Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
-            </p>
-
-            {/* Red Border Section Title (Latest News) */}
-            <div className="mt-3 p-1 border border-red-800/80 rounded bg-red-950/20">
-              <h5 className="text-[8px] font-bold text-red-400 font-serif">
-                Latest News
-              </h5>
-            </div>
-
-            <div className="mt-2 p-1 border border-slate-800 rounded bg-slate-950 text-[7px] text-slate-400">
-              <span className="font-semibold text-slate-300">March 22nd, 2007: Apache Tika project started</span>
-              <p className="text-[6.5px] mt-0.5 leading-tight">The Apache Tika project was formally started when the Tika proposal was accepted by the Apache Incubator PMC.</p>
+            {/* RENDERIZADO CANVAS CON PDF.JS DEL PDF REAL */}
+            <div className="mt-2 flex justify-center">
+              <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.44} className="max-h-[220px]" />
             </div>
           </div>
 
           <div className="text-[6.5px] text-slate-400 border-t border-slate-800 pt-1 flex justify-between">
-            <span>DOCUMENTO PDF FUENTE</span>
-            <span className="text-slate-400">Sin Modificaciones</span>
+            <span>DOCUMENTO PDF FUENTE REAL</span>
+            <span className="text-slate-400">Vectorial intacto</span>
           </div>
         </div>
 
@@ -538,7 +521,7 @@ function PreviewCard() {
       </div>
 
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 px-1">
-        <Check size={14} className="text-emerald-400 shrink-0" /> Preserva el formato original e inserta controles editables sobre las zonas indicadas
+        <Check size={14} className="text-emerald-400 shrink-0" /> Renderizado directo con PDF.js: Preserva el formato original e inserta controles editables sobre las zonas indicadas
       </div>
     </div>
   );
