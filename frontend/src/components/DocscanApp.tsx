@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
-import { DocscanWorkspace } from './DocscanWorkspace';
+import { DocscanWorkspace, SampleDocData } from './DocscanWorkspace';
+import { decalogoPdfSample } from '../data/decalogoSample';
 
 type View = 'home' | 'how' | 'loading' | 'upload' | 'workspace';
 type Kind = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'JPG';
@@ -66,7 +67,7 @@ const tutorialSteps: StepDetail[] = [
     input: 'Archivo local',
     action: 'Hash SHA-256 & Validación',
     output: 'Registro seguro en servidor',
-    resultText: 'Documento verificado e inmune a alteraciones no autorizadas.'
+    resultText: 'Documento verificado e inmune a alterations no autorizadas.'
   },
   {
     title: 'Lectura original',
@@ -220,6 +221,7 @@ export function DocscanApp() {
   const [howStep, setHowStep] = useState(0);
   const [notice, setNotice] = useState(false);
   const [activeFile, setActiveFile] = useState<File | null>(null);
+  const [activeSampleData, setActiveSampleData] = useState<SampleDocData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const go = (next: View) => {
@@ -234,6 +236,13 @@ export function DocscanApp() {
 
   const handleSelectedFile = (file: File) => {
     setActiveFile(file);
+    setActiveSampleData(null);
+    setView('workspace');
+  };
+
+  const handleLoadSamplePdf = () => {
+    setActiveFile(null);
+    setActiveSampleData(decalogoPdfSample);
     setView('workspace');
   };
 
@@ -336,18 +345,18 @@ export function DocscanApp() {
         </div>
       )}
 
-      {view === 'home' && <Landing start={() => go('loading')} how={() => go('how')} login={() => setLogin(true)} />}
+      {view === 'home' && <Landing start={() => go('loading')} onLoadSample={handleLoadSamplePdf} how={() => go('how')} login={() => setLogin(true)} />}
       {view === 'how' && <How start={() => go('loading')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
       {view === 'loading' && <Loading />}
-      {view === 'upload' && <UploadView start={(f) => handleSelectedFile(f)} back={() => go('home')} />}
-      {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} back={() => go('upload')} />}
+      {view === 'upload' && <UploadView start={(f) => handleSelectedFile(f)} onLoadSample={handleLoadSamplePdf} back={() => go('home')} />}
+      {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('upload')} />}
 
       {login && <LoginModal close={() => setLogin(false)} />}
     </div>
   );
 }
 
-function Landing({ start, how, login }: { start: () => void; how: () => void; login: () => void }) {
+function Landing({ start, onLoadSample, how, login }: { start: () => void; onLoadSample: () => void; how: () => void; login: () => void }) {
   return (
     <main>
       <section className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-14 px-4 sm:px-6 pb-16 sm:pb-24 pt-12 sm:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pt-28">
@@ -369,6 +378,12 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
               Comenzar gratis <ArrowRight size={16} className="ml-2 inline" />
             </button>
             <button
+              onClick={onLoadSample}
+              className="rounded-md bg-purple-600/90 hover:bg-purple-600 px-5 py-3 text-sm font-medium text-white shadow-md transition-all text-center justify-center flex items-center"
+            >
+              📂 Cargar PDF Real "Decálogo Transparencia" (51 págs)
+            </button>
+            <button
               onClick={how}
               className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200 text-center justify-center flex items-center"
             >
@@ -379,7 +394,7 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
             Iniciar sesión opcionalmente para guardar tu trabajo
           </button>
         </div>
-        <PreviewCard />
+        <PreviewCard onLoadSample={onLoadSample} />
       </section>
 
       <section className="border-y border-slate-800 bg-slate-900/40">
@@ -428,37 +443,62 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
   );
 }
 
-function PreviewCard() {
+function PreviewCard({ onLoadSample }: { onLoadSample: () => void }) {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 p-3.5 sm:p-4 shadow-2xl">
       <div className="flex items-center justify-between border-b border-slate-800 px-2 sm:px-3 pb-3 sm:pb-4">
         <div className="flex items-center gap-2">
           <ScanLine size={15} className="text-indigo-400 shrink-0" />
-          <span className="text-xs font-medium text-slate-200">Plantilla reconstruida</span>
+          <span className="text-xs font-medium text-slate-200">Plantilla reconstruida (PDF Real 51 Págs)</span>
         </div>
         <span className="text-[10px] text-emerald-400">Apariencia preservada</span>
       </div>
       <div className="mt-4 sm:mt-5 rounded-lg border border-slate-800 bg-slate-950 p-4 sm:p-5">
-        <div className="flex justify-between">
-          <div className="h-2 w-28 sm:w-32 rounded bg-slate-800" />
-          <div className="h-2 w-10 sm:w-12 rounded bg-slate-800" />
+        <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-4">
+          <span className="text-[10px] font-mono text-purple-300 font-semibold truncate max-w-[220px]">
+            Decalogo_Acceso_Documentos_Archivos_Publicos.pdf
+          </span>
+          <span className="text-[9px] text-slate-400">Página 1 de 51</span>
         </div>
-        <div className="mt-6 sm:mt-8 grid gap-3 sm:gap-4">
-          <div className="h-2 w-3/4 rounded bg-slate-800" />
-          <div className="h-8 sm:h-9 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-3 text-xs text-indigo-300">
-            Campo editable de texto
+        
+        <div className="space-y-1.5">
+          <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-tight leading-tight">
+            DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
+          </h3>
+          <p className="text-[10px] text-purple-300 font-semibold">
+            PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
+          </p>
+          <p className="text-[9px] text-slate-400 italic">
+            Mesa de Trabajo de Archivos de la Administración Local (MTAAL)
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-2.5">
+          <div className="h-10 rounded border border-emerald-500/80 bg-emerald-500/10 flex items-center px-3 text-xs text-emerald-300 font-medium">
+            🔒 Texto estático impreso no modificado (Título Decálogo)
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="h-8 sm:h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Fecha</div>
-            <div className="h-8 sm:h-9 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-500">Firma</div>
+          <div className="h-9 rounded border border-indigo-500/60 bg-indigo-500/10 flex items-center px-3 text-xs text-indigo-300">
+            Campo editable: Entidad Emisora (MTAAL)
           </div>
-          <div className="h-14 sm:h-16 rounded border border-emerald-500/60 bg-emerald-500/10 flex items-center px-3 text-xs text-emerald-300">
-            Texto estático impreso no modificado
+          <div className="grid grid-cols-2 gap-2">
+            <div className="h-8 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-400">
+              Fecha (23/09/2024)
+            </div>
+            <div className="h-8 rounded border border-slate-800 flex items-center px-3 text-xs text-slate-400">
+              Firma Autenticador
+            </div>
           </div>
         </div>
+
+        <button
+          onClick={onLoadSample}
+          className="mt-4 w-full rounded bg-indigo-600/90 hover:bg-indigo-600 py-2 text-xs font-medium text-white shadow-sm transition-all"
+        >
+          📂 Abrir PDF Real "Decálogo Transparencia" en Workspace (51 págs)
+        </button>
       </div>
       <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-slate-400">
-        <Check size={14} className="text-emerald-400 shrink-0" /> Solo cambia lo que indicaste
+        <Check size={14} className="text-emerald-400 shrink-0" /> Solo cambia lo que indicaste · Texto impreso original intacto
       </div>
     </div>
   );
@@ -634,7 +674,7 @@ function Loading() {
   );
 }
 
-function UploadView({ start, back }: { start: (file: File) => void; back: () => void }) {
+function UploadView({ start, onLoadSample, back }: { start: (file: File) => void; onLoadSample: () => void; back: () => void }) {
   const [dragOver, setDragOver] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -664,19 +704,28 @@ function UploadView({ start, back }: { start: (file: File) => void; back: () => 
       </div>
 
       <div className="mt-6 sm:mt-8 grid gap-5 lg:grid-cols-[1fr_300px]">
-        <label
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          className={`flex min-h-60 sm:min-h-80 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed transition-all p-6 sm:p-8 text-center ${
-            dragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:border-slate-500'
-          }`}
-        >
-          <Upload size={28} className="text-indigo-400" />
-          <span className="mt-3 sm:mt-4 font-medium text-sm sm:text-base text-white">Arrastra un archivo aquí</span>
-          <span className="mt-1.5 sm:mt-2 text-xs text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
-          <input className="sr-only" type="file" accept=".docx,.pdf,.xlsx,.pptx,image/*" onChange={handleFileChange} />
-        </label>
+        <div className="space-y-4">
+          <label
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            className={`flex min-h-60 sm:min-h-80 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed transition-all p-6 sm:p-8 text-center ${
+              dragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:border-slate-500'
+            }`}
+          >
+            <Upload size={28} className="text-indigo-400" />
+            <span className="mt-3 sm:mt-4 font-medium text-sm sm:text-base text-white">Arrastra un archivo aquí</span>
+            <span className="mt-1.5 sm:mt-2 text-xs text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
+            <input className="sr-only" type="file" accept=".docx,.pdf,.xlsx,.pptx,image/*" onChange={handleFileChange} />
+          </label>
+
+          <button
+            onClick={onLoadSample}
+            className="w-full rounded-lg border border-purple-500/50 bg-purple-950/30 hover:bg-purple-950/50 p-3 text-xs text-purple-200 font-medium flex items-center justify-center gap-2 transition-all"
+          >
+            📂 Probar directamente con el PDF Real "Decálogo sobre Acceso a Archivos Públicos" (51 páginas)
+          </button>
+        </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
           <p className="text-xs text-slate-400">Formatos compatibles</p>

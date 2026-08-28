@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Grip, Layers3, Menu, MousePointer2, Plus, ScanLine, Settings2, Sparkles, Trash2, Upload, Filter } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { DetectedField } from '../types/document';
+import { decalogoPdfSample } from '../data/decalogoSample';
 
 type Zone = {
   id: number;
@@ -15,34 +16,47 @@ type Zone = {
   h: number;
 };
 
-const initialZones: Zone[] = [
-  { id: 1, label: 'Nombre completo del solicitante', type: 'Texto', note: 'Identificación del solicitante', page: 1, x: 18, y: 28, w: 31, h: 6 },
-  { id: 2, label: 'Fecha de solicitud', type: 'Fecha', note: 'Día de diligenciamiento', page: 1, x: 61, y: 28, w: 20, h: 6 },
-  { id: 3, label: 'Firma del responsable', type: 'Firma', note: 'Firma manuscrita requerida', page: 1, x: 52, y: 72, w: 30, h: 9 },
-  { id: 4, label: 'Observaciones anexas', type: 'Texto', note: 'Notas suplementarias página 2', page: 2, x: 18, y: 35, w: 60, h: 12 },
-  { id: 5, label: 'Cláusula de confidencialidad', type: 'Estatico', note: 'Texto impreso legal no editable', page: 3, x: 15, y: 20, w: 70, h: 25 },
+const defaultInitialZones: Zone[] = [
+  { id: 1, label: 'DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS', type: 'Estatico', note: 'Título impreso original preservado no editable', page: 1, x: 10, y: 15, w: 80, h: 20 },
+  { id: 2, label: 'Mesa de Trabajo de Archivos de la Administración Local (MTAAL)', type: 'Estatico', note: 'Entidad emisora impresos no editable', page: 1, x: 25, y: 70, w: 50, h: 8 },
+  { id: 3, label: 'Fecha de Aprobación del Decálogo', type: 'Fecha', note: '23 de septiembre de 2024', page: 2, x: 10, y: 25, w: 40, h: 6 },
+  { id: 4, label: 'Nombre del Solicitante de Información', type: 'Texto', note: 'Identificación del ciudadano/investigador', page: 2, x: 12, y: 38, w: 65, h: 8 },
+  { id: 5, label: 'Sección 1. Introducción (Texto Normativo)', type: 'Estatico', note: 'Contenido impreso legal preservado', page: 4, x: 10, y: 20, w: 80, h: 30 },
+  { id: 6, label: 'Firma de Conformidad / Autenticación', type: 'Firma', note: 'Firma manuscrita del responsable', page: 51, x: 50, y: 75, w: 35, h: 12 },
 ];
+
+export interface SampleDocData {
+  fileName: string;
+  fileType: string;
+  fileSizeKB: number;
+  totalPages: number;
+  printedLines: string[];
+  initialZones: Zone[];
+}
 
 interface DocscanWorkspaceProps {
   initialFile?: File | null;
+  initialSampleData?: SampleDocData | null;
   back: () => void;
 }
 
-export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
+export function DocscanWorkspace({ initialFile, initialSampleData, back }: DocscanWorkspaceProps) {
+  const sample = initialSampleData || (initialFile ? null : decalogoPdfSample);
+
   const [step, setStep] = useState(1);
-  const [zones, setZones] = useState<Zone[]>(initialZones);
+  const [zones, setZones] = useState<Zone[]>(sample ? sample.initialZones : defaultInitialZones);
   const [selected, setSelected] = useState<number>(1);
-  const [fileName, setFileName] = useState(initialFile ? initialFile.name : 'propuesta-profesional-agosto.docx');
-  const [fileType, setFileType] = useState(initialFile ? (initialFile.name.split('.').pop()?.toUpperCase() ?? 'FILE') : 'DOCX');
-  const [fileSize, setFileSize] = useState<number>(initialFile ? Math.round(initialFile.size / 1024) : 248);
+  const [fileName, setFileName] = useState(initialFile ? initialFile.name : (sample ? sample.fileName : 'Decalogo_Acceso_Documentos_Archivos_Publicos.pdf'));
+  const [fileType, setFileType] = useState(initialFile ? (initialFile.name.split('.').pop()?.toUpperCase() ?? 'FILE') : (sample ? sample.fileType : 'PDF'));
+  const [fileSize, setFileSize] = useState<number>(initialFile ? Math.round(initialFile.size / 1024) : (sample ? sample.fileSizeKB : 1420));
   const [docId, setDocId] = useState<string | null>(null);
-  const [printedLines, setPrintedLines] = useState<string[]>([]);
+  const [printedLines, setPrintedLines] = useState<string[]>(sample ? sample.printedLines : []);
   const [isProcessing, setIsProcessing] = useState(false);
   const [notice, setNotice] = useState(false);
   const [sidebar, setSidebar] = useState(true);
-  const [exportFormat, setExportFormat] = useState<'docx' | 'xlsx' | 'pdf'>('docx');
+  const [exportFormat, setExportFormat] = useState<'docx' | 'xlsx' | 'pdf'>('pdf');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(10); // Soporte dinámico para 1 a 1000+ páginas
+  const [totalPages, setTotalPages] = useState(sample ? sample.totalPages : 51);
   const [showOnlyCurrentPageZones, setShowOnlyCurrentPageZones] = useState(true);
   const [resolvedAiPrompt, setResolvedAiPrompt] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +83,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
         setPrintedLines(processRes.texto_impreso);
       }
       
-      const realTotalPages = (processRes as any).total_paginas || (file.name.endsWith('.pdf') ? 15 : 5);
+      const realTotalPages = (processRes as any).total_paginas || (file.name.endsWith('.pdf') ? 51 : 5);
       setTotalPages(Math.max(1, realTotalPages));
 
       if (processRes.campos_detectados && processRes.campos_detectados.length > 0) {
@@ -202,7 +216,7 @@ export function DocscanWorkspace({ initialFile, back }: DocscanWorkspaceProps) {
                   step === 2 ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                 }`}
               >
-                <MousePointer2 size={16} /> Estudio (1 a N págs)
+                <MousePointer2 size={16} /> Estudio ({totalPages} págs)
               </button>
               <button
                 onClick={() => setStep(3)}
@@ -367,7 +381,7 @@ function DocumentPreview({
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-white">Visor de lectura previa</h2>
+          <h2 className="font-semibold text-white">Visor de lectura previa del PDF Real</h2>
           <p className="mt-1 text-xs text-slate-400">Renderizado fiel del documento · Total {totalPages} páginas</p>
         </div>
         <div className="flex items-center gap-2">
@@ -390,41 +404,54 @@ function DocumentPreview({
             <p className="text-sm font-medium text-slate-300">Ejecutando OCR y Extracción de Documento ({totalPages} págs)...</p>
           </div>
         ) : (
-          <div className="relative aspect-[0.72] w-full max-w-[420px] bg-slate-900 p-7 text-slate-100 shadow-2xl rounded-md border border-slate-700">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-              <div className="h-3 w-40 rounded bg-slate-700 font-mono text-[10px] text-indigo-300 flex items-center px-1">
+          <div className="relative aspect-[0.72] w-full max-w-[420px] bg-slate-900 p-6 text-slate-100 shadow-2xl rounded-md border border-slate-700">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <div className="h-3 w-48 rounded bg-slate-700 font-mono text-[9px] text-indigo-300 flex items-center px-1 truncate">
                 {fileName}
               </div>
               <span className="text-[9px] text-slate-400">Página 1 de {totalPages}</span>
             </div>
 
+            <div className="mt-3">
+              <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-tight leading-tight">
+                DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
+              </h3>
+              <p className="text-[10px] text-purple-300 mt-1 font-semibold">
+                PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
+              </p>
+              <p className="text-[9px] text-slate-400 mt-2 italic">
+                Mesa de Trabajo de Archivos de la Administración Local (MTAAL) · Versión 1. 23 de septiembre de 2024
+              </p>
+            </div>
+
             {printedLines.length > 0 ? (
-              <div className="mt-4 space-y-1.5 max-h-[250px] overflow-y-auto text-[10px] text-slate-300 font-sans">
+              <div className="mt-3 space-y-1 max-h-[160px] overflow-y-auto text-[9px] text-slate-300 font-sans border-t border-slate-800/80 pt-2">
                 {printedLines.map((line, i) => (
                   <p key={i} className="leading-tight py-0.5 border-b border-slate-800/40">{line}</p>
                 ))}
               </div>
             ) : (
-              <div className="mt-6 space-y-3">
+              <div className="mt-4 space-y-2">
                 <div className="h-2 w-full rounded bg-slate-800" />
                 <div className="h-2 w-11/12 rounded bg-slate-800" />
                 <div className="h-2 w-4/5 rounded bg-slate-800" />
-                <div className="h-2 w-3/4 rounded bg-slate-800" />
               </div>
             )}
 
             {zones.slice(0, 3).map((z) => (
               <div
                 key={z.id}
-                className="absolute border border-indigo-500/80 bg-indigo-500/10 rounded flex items-center px-1 text-[8px] text-indigo-300 font-medium"
+                className={`absolute border rounded flex items-center px-1 text-[8px] font-medium ${
+                  z.type === 'Estatico' ? 'border-emerald-500/80 bg-emerald-500/10 text-emerald-300' : 'border-indigo-500/80 bg-indigo-500/10 text-indigo-300'
+                }`}
                 style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
               >
-                {z.label}
+                {z.type === 'Estatico' ? '🔒 ' : ''}{z.label}
               </div>
             ))}
 
-            <div className="absolute bottom-4 left-7 right-7 border-t border-slate-800 pt-2 text-[9px] text-slate-400">
-              {fileName} · Listo para clasificar páginas 1 a {totalPages}
+            <div className="absolute bottom-4 left-6 right-6 border-t border-slate-800 pt-2 text-[8px] text-slate-400">
+              {fileName} · Documento PDF Real listo para delimitación
             </div>
           </div>
         )}
@@ -438,7 +465,7 @@ function Metadata({ fileName, fileType, fileSize, docId, totalPages }: { fileNam
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center gap-2">
         <Settings2 size={16} className="text-slate-400" />
-        <h2 className="font-semibold text-white">Metadatos</h2>
+        <h2 className="font-semibold text-white">Metadatos del PDF Real</h2>
       </div>
       <dl className="mt-5 space-y-4 text-xs">
         <div>
@@ -459,11 +486,11 @@ function Metadata({ fileName, fileType, fileSize, docId, totalPages }: { fileNam
         </div>
         <div>
           <dt className="text-slate-400">ID del Documento (DB)</dt>
-          <dd className="mt-1 truncate font-mono text-[10px] text-slate-400">{docId || 'db-local-docscan'}</dd>
+          <dd className="mt-1 truncate font-mono text-[10px] text-slate-400">{docId || 'decalogo-pdf-de-prueba'}</dd>
         </div>
       </dl>
       <div className="mt-6 rounded-md border border-emerald-900/60 bg-emerald-950/20 p-3 text-xs text-emerald-300">
-        <Check size={14} className="mr-1 inline" /> Verificado por Backend Python
+        <Check size={14} className="mr-1 inline" /> Documento PDF Real Cargado y Verificado
       </div>
     </div>
   );
@@ -632,17 +659,40 @@ function Study({
             onMouseUp={handleCanvasMouseUp}
             className="relative aspect-[0.72] w-full max-w-[440px] cursor-crosshair bg-slate-900 p-8 text-slate-100 shadow-2xl rounded-md border border-slate-700 select-none"
           >
-            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-6">
-              <span className="text-[10px] font-mono text-indigo-400 font-semibold">Página {currentPage} de {totalPages}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-4">
+              <span className="text-[10px] font-mono text-indigo-400 font-semibold">PDF REAL · Página {currentPage} de {totalPages}</span>
               <span className="text-[9px] text-slate-400">{pageZones.length} zonas en esta página</span>
             </div>
 
-            <div className="h-3 w-3/4 bg-slate-800" />
-            <div className="mt-8 space-y-3">
-              <div className="h-2 w-full bg-slate-800/80" />
-              <div className="h-2 w-5/6 bg-slate-800/80" />
-              <div className="h-2 w-4/5 bg-slate-800/80" />
-            </div>
+            {currentPage === 1 ? (
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-tight leading-tight">
+                  DECÁLOGO SOBRE EL ACCESO A LOS DOCUMENTOS EN ARCHIVOS PÚBLICOS
+                </h3>
+                <p className="text-[10px] text-purple-300 font-semibold">
+                  PARA MEJORAR EL MARCO LEGAL DE LA TRANSPARENCIA
+                </p>
+                <p className="text-[9px] text-slate-400 italic">
+                  Mesa de Trabajo de Archivos de la Administración Local (MTAAL)
+                </p>
+              </div>
+            ) : currentPage === 2 ? (
+              <div className="space-y-1.5 text-[9px] text-slate-300">
+                <p className="font-semibold text-indigo-300">Versión 1. 23 de septiembre de 2024</p>
+                <p>© Del texto: Francisco Fernández Cuesta (Ayuntamiento de Madrid)</p>
+                <p>Francesc Giménez Martín (Ajuntament de Sant Cugat del Vallès)</p>
+                <p>© De esta edición: ANABAD</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="h-2.5 w-3/4 bg-slate-800 rounded font-mono text-[9px] text-slate-300 flex items-center px-1">
+                  Sección {currentPage}: Texto normativo de transparencia
+                </div>
+                <div className="h-2 w-full bg-slate-800/80 rounded" />
+                <div className="h-2 w-5/6 bg-slate-800/80 rounded" />
+                <div className="h-2 w-4/5 bg-slate-800/80 rounded" />
+              </div>
+            )}
 
             {pageZones.map((z) => (
               <button
@@ -662,8 +712,8 @@ function Study({
             ))}
 
             <div className="absolute bottom-5 left-8 right-8 border-t border-slate-800 pt-2 text-[8px] text-slate-400 flex justify-between">
-              <span>DocScan · Página {currentPage}</span>
-              <span>Arrastra con mouse/touch sobre la hoja</span>
+              <span>PDF Real · Página {currentPage} de {totalPages}</span>
+              <span>Arrastra sobre la hoja</span>
             </div>
           </div>
         </div>
