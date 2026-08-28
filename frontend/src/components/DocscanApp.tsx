@@ -383,7 +383,7 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
           </button>
         </div>
 
-        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (RENDERIZADO CON PDF.JS NATIVO) */}
+        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (RENDERIZADO AMBOS CON PDF.JS NATIVO) */}
         <PreviewCard />
       </section>
 
@@ -434,6 +434,9 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
 }
 
 function PreviewCard() {
+  const [editableTitle, setEditableTitle] = useState('Tika - Content Analysis Toolkit 2026');
+  const [editableText, setEditableText] = useState('Apache Tika is a toolkit for detecting and extracting metadata...');
+
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4 shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
@@ -446,82 +449,88 @@ function PreviewCard() {
 
       <div className="mt-3 grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
         
-        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (RENDERIZADO CANVAS CON PDF.JS DE ARCHIVO REAL) */}
+        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (RENDERIZADO CANVAS CON PDF.JS DEL MISMO PDF REAL) */}
         <div className="rounded border border-slate-700 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
           <div>
             <div className="flex justify-between items-center text-[7px] font-mono text-slate-400 pb-1 border-b border-slate-800">
               <span className="truncate max-w-[90px] font-semibold text-slate-300">10_Tika_Test_Sample.pdf</span>
-              <span className="text-indigo-400">PDF.js Engine</span>
+              <span className="text-indigo-400">PDF.js Original</span>
             </div>
 
-            {/* RENDERIZADO CANVAS CON PDF.JS DEL PDF REAL */}
+            {/* RENDERIZADO CANVAS CON PDF.JS DEL PDF REAL ORIGINAL */}
             <div className="mt-2 flex justify-center">
               <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.44} className="max-h-[220px]" />
             </div>
           </div>
 
           <div className="text-[6.5px] text-slate-400 border-t border-slate-800 pt-1 flex justify-between">
-            <span>DOCUMENTO PDF FUENTE REAL</span>
-            <span className="text-slate-400">Vectorial intacto</span>
+            <span>HOJA 1: PDF ORIGINAL INTACTO</span>
+            <span className="text-slate-400">Sin Modificaciones</span>
           </div>
         </div>
 
-        {/* HOJA DERECHA: PLANTILLA EDITABLE RECONSTRUIDA */}
-        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2.5 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+        {/* HOJA DERECHA: MISMO PDF REAL CON PDF.JS + CAPA DE CAMPOS EDITABLES LLENABLES */}
+        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
           <div>
             <div className="flex justify-between items-center text-[7px] font-mono text-emerald-400 pb-1 border-b border-slate-800 font-semibold">
-              <span className="truncate max-w-[90px]">Plantilla_Editable.pdf</span>
-              <span className="text-emerald-400">Campos Llenables</span>
+              <span className="truncate max-w-[90px]">10_Tika_Test_Sample.pdf</span>
+              <span className="text-emerald-400">PDF.js + Campos Editables</span>
             </div>
 
-            {/* Static Preserved Title Box */}
-            <div className="mt-2.5 p-1 border border-emerald-600/80 rounded bg-emerald-950/30 text-center">
-              <h4 className="text-[9px] font-bold text-emerald-300 font-serif leading-tight">
-                🔒 Tika - Content Analysis Toolkit (Preservado)
-              </h4>
-            </div>
+            {/* RENDERIZADO CANVAS CON PDF.JS DEL MISMO PDF REAL CON CAPA SUPERPUESTA EDITABLE */}
+            <div className="mt-2 flex justify-center">
+              <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.44} className="max-h-[220px]">
+                {/* CAMPO EDITABLE 1: SOBRE EL TÍTULO DEL PDF */}
+                <div className="absolute top-[14%] left-[10%] right-[10%] z-20">
+                  <input
+                    type="text"
+                    value={editableTitle}
+                    onChange={(e) => setEditableTitle(e.target.value)}
+                    className="w-full bg-indigo-950/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7.5px] font-bold shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                    title="Editar Título"
+                  />
+                </div>
 
-            {/* Editable Field Input 1 */}
-            <div className="mt-2 text-[7px]">
-              <span className="text-indigo-300 block mb-0.5">Editable: Descripción Toolkit:</span>
-              <input
-                type="text"
-                readOnly
-                value="Apache Tika is a toolkit for detecting..."
-                className="w-full bg-slate-950 border border-indigo-500/70 text-indigo-200 rounded p-1 text-[7px]"
-              />
-            </div>
+                {/* CAMPO EDITABLE 2: SOBRE EL PARRAFO DEL PDF */}
+                <div className="absolute top-[28%] left-[10%] right-[10%] z-20">
+                  <textarea
+                    rows={2}
+                    value={editableText}
+                    onChange={(e) => setEditableText(e.target.value)}
+                    className="w-full bg-slate-950/95 border border-indigo-400 text-indigo-200 rounded px-1.5 py-0.5 text-[7px] shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 leading-tight"
+                    title="Editar Descripción"
+                  />
+                </div>
 
-            {/* Static Preserved Section Title */}
-            <div className="mt-2.5 p-1 border border-emerald-600/80 rounded bg-emerald-950/30">
-              <h5 className="text-[8px] font-bold text-emerald-300 font-serif">
-                🔒 Latest News (Texto Impreso Intacto)
-              </h5>
-            </div>
+                {/* CAMPO EDITABLE 3: SELECTOR DE FECHA SOBRE EL BLOQUE DE NOTICIAS */}
+                <div className="absolute bottom-[28%] left-[10%] z-20">
+                  <input
+                    type="date"
+                    defaultValue="2007-03-22"
+                    className="bg-slate-950/95 border border-emerald-400 text-emerald-200 rounded px-1 text-[7px] font-mono shadow-md"
+                  />
+                </div>
 
-            {/* Editable Date Field & Signature */}
-            <div className="mt-2 text-[7px] space-y-1">
-              <div className="flex items-center justify-between bg-slate-950 border border-indigo-500/70 p-1 rounded text-indigo-300">
-                <span>Fecha: 2007-03-22</span>
-                <span className="text-[6px] text-slate-400">Picker</span>
-              </div>
-              <div className="bg-indigo-950/40 border border-indigo-500/70 p-1 rounded text-indigo-200 flex items-center justify-between">
-                <span>✍️ Firma Aprobación PMC</span>
-                <span className="text-[6px] text-indigo-400">Manuscrita</span>
-              </div>
+                {/* CAMPO EDITABLE 4: FIRMA MANUSCRITA SOBRE EL PIE DEL PDF */}
+                <div className="absolute bottom-[10%] right-[10%] z-20">
+                  <button className="bg-indigo-900/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7px] font-medium shadow-md hover:bg-indigo-800 transition-colors">
+                    ✍️ Firma Aprobación PMC
+                  </button>
+                </div>
+              </RealPdfViewer>
             </div>
           </div>
 
           <div className="text-[6.5px] text-emerald-400 border-t border-slate-800 pt-1 flex justify-between font-medium">
-            <span>RECONSTRUCCIÓN EDITABLE</span>
-            <span>Fidelidad 100%</span>
+            <span>HOJA 2: MISMO PDF + CONTROLES LLENABLES</span>
+            <span className="text-emerald-300">100% Interactivo</span>
           </div>
         </div>
 
       </div>
 
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 px-1">
-        <Check size={14} className="text-emerald-400 shrink-0" /> Renderizado directo con PDF.js: Preserva el formato original e inserta controles editables sobre las zonas indicadas
+        <Check size={14} className="text-emerald-400 shrink-0" /> Renderizado con PDF.js en ambas hojas: El archivo PDF fuente se conserva intacto a la izquierda y se vuelve 100% editable a la derecha.
       </div>
     </div>
   );

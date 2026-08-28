@@ -9,9 +9,10 @@ interface RealPdfViewerProps {
   pageNum?: number;
   scale?: number;
   className?: string;
+  children?: React.ReactNode;
 }
 
-export function RealPdfViewer({ url, pageNum = 1, scale = 0.5, className = '' }: RealPdfViewerProps) {
+export function RealPdfViewer({ url, pageNum = 1, scale = 0.5, className = '', children }: RealPdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +79,14 @@ export function RealPdfViewer({ url, pageNum = 1, scale = 0.5, className = '' }:
           <span className="text-[9px] font-medium text-slate-300">Renderizando PDF Real (PDF.js)...</span>
         </div>
       )}
-      <canvas ref={canvasRef} className="max-w-full rounded shadow-md border border-slate-700/60" />
+      <div className="relative">
+        <canvas ref={canvasRef} className="max-w-full rounded shadow-md border border-slate-700/60" />
+        {children && (
+          <div className="absolute inset-0 z-20 pointer-events-auto">
+            {children}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
