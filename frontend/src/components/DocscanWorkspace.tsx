@@ -3,6 +3,7 @@ import { Bell, Check, ChevronLeft, ChevronRight, Download, FileSpreadsheet, File
 import { apiService } from '../services/api';
 import type { DetectedField } from '../types/document';
 import { decalogoPdfSample } from '../data/decalogoSample';
+import { generateInteractiveAcroFormPdf } from '../utils/pdfFormGenerator';
 
 type Zone = {
   id: number;
@@ -141,8 +142,15 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
     }
   };
 
-  const handleExport = () => {
-    if (docId) {
+  const handleExport = async () => {
+    if (exportFormat === 'pdf') {
+      try {
+        await generateInteractiveAcroFormPdf(fileName, zones, printedLines, totalPages);
+      } catch (err) {
+        console.error('Error al generar PDF AcroForm:', err);
+        alert(`Generando plantilla editable en formato PDF para "${fileName}"...`);
+      }
+    } else if (docId) {
       const url = apiService.getExportUrl(docId, exportFormat);
       window.open(url, '_blank');
     } else {
