@@ -45,6 +45,9 @@ interface DocscanWorkspaceProps {
 export function DocscanWorkspace({ initialFile, initialSampleData, back }: DocscanWorkspaceProps) {
   const sample = initialSampleData || (initialFile ? null : decalogoPdfSample);
 
+  const [fileUrl, setFileUrl] = useState<string | null>(
+    initialFile ? URL.createObjectURL(initialFile) : null
+  );
   const [step, setStep] = useState(1);
   const [zones, setZones] = useState<Zone[]>(sample ? sample.initialZones : defaultInitialZones);
   const [selected, setSelected] = useState<number>(1);
@@ -63,11 +66,20 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
   const [viewMode, setViewMode] = useState<'split' | 'editable' | 'original'>('split');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (initialFile) {
+      const url = URL.createObjectURL(initialFile);
+      setFileUrl(url);
+    }
+  }, [initialFile]);
+
   const current = zones.find((zone) => zone.id === selected) ?? zones[0];
 
   // Handle uploaded file via API Service
   const handleFile = async (file?: File) => {
     if (!file) return;
+    const newObjectUrl = URL.createObjectURL(file);
+    setFileUrl(newObjectUrl);
     const ext = file.name.split('.').pop()?.toUpperCase() ?? 'FILE';
     setFileName(file.name);
     setFileType(ext);
@@ -312,6 +324,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
                     printedLines={printedLines}
                     isProcessing={isProcessing}
                     totalPages={totalPages}
+                    pdfUrl={fileUrl || '/sample_tika.pdf'}
                     onStartStudio={() => setStep(2)}
                   />
                 </div>
@@ -341,6 +354,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
                 setViewMode={setViewMode}
                 fileName={fileName}
                 fileType={fileType}
+                pdfUrl={fileUrl || '/sample_tika.pdf'}
               />
             )}
 
@@ -370,6 +384,7 @@ function DocumentPreview({
   printedLines,
   isProcessing,
   totalPages,
+  pdfUrl,
   onStartStudio,
 }: {
   fileType: string;
@@ -378,6 +393,7 @@ function DocumentPreview({
   printedLines: string[];
   isProcessing: boolean;
   totalPages: number;
+  pdfUrl: string;
   onStartStudio: () => void;
 }) {
   return (
@@ -409,7 +425,7 @@ function DocumentPreview({
         ) : (
           <div className="w-full">
             <RealPdfViewer
-              url="/sample_tika.pdf"
+              url={pdfUrl}
               pageNum={1}
               scale={0.85}
               showToolbar={true}
@@ -489,6 +505,7 @@ function Study({
   setViewMode,
   fileName,
   fileType,
+  pdfUrl,
 }: {
   zones: Zone[];
   current: Zone;
@@ -509,6 +526,7 @@ function Study({
   setViewMode: (v: 'split' | 'editable' | 'original') => void;
   fileName: string;
   fileType: string;
+  pdfUrl: string;
 }) {
   const [drawMode, setDrawMode] = useState(false);
   const pageZones = zones.filter((z) => Math.min(totalPages, Math.max(1, z.page)) === currentPage);
@@ -599,7 +617,7 @@ function Study({
                 </div>
                 <div className="mt-2 flex-1 overflow-hidden">
                   <RealPdfViewer
-                    url="/sample_tika.pdf"
+                    url={pdfUrl}
                     pageNum={currentPage}
                     scale={0.72}
                     showToolbar={true}
@@ -620,7 +638,7 @@ function Study({
                 </div>
                 <div className="mt-2 flex-1 overflow-hidden">
                   <RealPdfViewer
-                    url="/sample_tika.pdf"
+                    url={pdfUrl}
                     pageNum={currentPage}
                     scale={0.72}
                     showToolbar={true}
