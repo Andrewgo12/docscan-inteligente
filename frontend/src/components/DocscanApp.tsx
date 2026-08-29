@@ -233,7 +233,7 @@ export function DocscanApp() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
       {/* Header Responsivo */}
       <header className="sticky top-0 z-40 flex h-14 sm:h-16 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur px-4 sm:px-8">
-        <button onClick={() => go('home')} className="flex items-center gap-2.5 sm:gap-3">
+        <button onClick={() => go('home')} className="flex items-center gap-2.5 sm:gap-3 hover-scale">
           <span className="flex size-7 sm:size-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
             <ScanLine size={16} className="sm:size-[17px]" />
           </span>
@@ -246,19 +246,19 @@ export function DocscanApp() {
         <nav className="hidden items-center gap-1 md:flex">
           <button
             onClick={() => go('home')}
-            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'home' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-all hover-scale ${view === 'home' ? 'bg-slate-800 text-white font-medium shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Inicio
           </button>
           <button
             onClick={() => go('how')}
-            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'how' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-all hover-scale ${view === 'how' ? 'bg-slate-800 text-white font-medium shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Cómo funciona
           </button>
           <button
             onClick={() => go('workspace')}
-            className={`rounded-md px-3 py-2 text-sm transition-colors ${view === 'workspace' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
+            className={`rounded-md px-3 py-2 text-sm transition-all hover-scale ${view === 'workspace' ? 'bg-slate-800 text-white font-medium shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}
           >
             Workspace
           </button>
@@ -267,20 +267,22 @@ export function DocscanApp() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setLogin(true)}
-            className="hidden rounded-md border border-slate-800 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-slate-800 sm:block text-slate-200"
+            className="hidden rounded-md border border-slate-800 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-slate-800 sm:block text-slate-200 hover-scale"
           >
             Iniciar sesión
           </button>
           <button
             onClick={() => setNotice(!notice)}
             aria-label="Notificaciones"
-            className="relative rounded-md p-2 text-slate-400 hover:bg-slate-800"
+            className="relative rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white hover-scale transition-all"
           >
             <Info size={18} />
             {notice && (
-              <div className="absolute right-0 top-11 w-64 rounded-lg border border-slate-800 bg-slate-900 p-4 text-left text-xs shadow-xl z-50">
-                <p className="font-medium text-white">Modo invitado disponible</p>
-                <p className="mt-1 text-slate-400">Puedes probar todas las funciones sin necesidad de crear cuenta.</p>
+              <div className="absolute right-0 top-11 w-64 rounded-lg border border-indigo-500/40 bg-slate-900 p-4 text-left text-xs shadow-2xl z-50 animate-dropdown">
+                <p className="font-medium text-white flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-indigo-400" /> Modo invitado activo
+                </p>
+                <p className="mt-1 text-slate-400">Puedes probar todas las funciones y exportar archivos sin necesidad de registrarte.</p>
               </div>
             )}
           </button>
@@ -288,7 +290,7 @@ export function DocscanApp() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-md p-2 text-slate-400 hover:bg-slate-800 md:hidden"
+            className="rounded-md p-2 text-slate-400 hover:bg-slate-800 md:hidden hover-scale"
             aria-label="Menú móvil"
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -298,7 +300,7 @@ export function DocscanApp() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-14 z-40 border-b border-slate-800 bg-slate-950 p-4 md:hidden animate-in slide-in-from-top duration-200">
+        <div className="fixed inset-x-0 top-14 z-40 border-b border-slate-800 bg-slate-950 p-4 md:hidden animate-dropdown">
           <nav className="flex flex-col gap-2">
             <button
               onClick={() => go('home')}
@@ -320,7 +322,7 @@ export function DocscanApp() {
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); setLogin(true); }}
-              className="mt-2 rounded-md border border-slate-700 px-3 py-2 text-center text-sm font-medium text-white"
+              className="mt-2 rounded-md border border-slate-700 px-3 py-2 text-center text-sm font-medium text-white hover-scale"
             >
               Iniciar sesión
             </button>
@@ -328,9 +330,12 @@ export function DocscanApp() {
         </div>
       )}
 
-      {view === 'home' && <Landing start={() => go('workspace')} how={() => go('how')} login={() => setLogin(true)} />}
-      {view === 'how' && <How start={() => go('workspace')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
-      {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('home')} />}
+      {/* ANIMACIONES DE CAMBIO DE VISTA (TRANSICIONES SUAVES FADE & SLIDE) */}
+      <div key={view} className="animate-page-in">
+        {view === 'home' && <Landing start={() => go('workspace')} how={() => go('how')} login={() => setLogin(true)} />}
+        {view === 'how' && <How start={() => go('workspace')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
+        {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('home')} />}
+      </div>
 
       {login && <LoginModal close={() => setLogin(false)} />}
     </div>
@@ -354,18 +359,18 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap gap-3">
             <button
               onClick={start}
-              className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-500 shadow-md transition-all text-center justify-center flex items-center"
+              className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-500 shadow-md transition-all text-center justify-center flex items-center btn-glow"
             >
               Comenzar gratis <ArrowRight size={16} className="ml-2 inline" />
             </button>
             <button
               onClick={how}
-              className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200 text-center justify-center flex items-center"
+              className="rounded-md border border-slate-800 px-5 py-3 text-sm font-medium hover:bg-slate-800 text-slate-200 text-center justify-center flex items-center hover-scale"
             >
-              <Play size={14} className="mr-2 inline" /> Ver cómo funciona
+              <Play size={14} className="mr-2 inline text-indigo-400" /> Ver cómo funciona
             </button>
           </div>
-          <button onClick={login} className="mt-4 sm:mt-5 text-xs text-slate-400 underline underline-offset-4 hover:text-slate-200">
+          <button onClick={login} className="mt-4 sm:mt-5 text-xs text-slate-400 underline underline-offset-4 hover:text-slate-200 hover-scale">
             Iniciar sesión opcionalmente para guardar tu trabajo
           </button>
         </div>
@@ -406,8 +411,8 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
         <div className="grid gap-4 sm:gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           {formats.map(({ kind, label, detail, icon: Icon }) => (
-            <div key={kind} className="rounded-lg border border-slate-800 bg-slate-900 p-3.5 sm:p-4">
-              <span className={`flex size-8 sm:size-9 items-center justify-center rounded-md ${kindColors[kind]} text-white`}>
+            <div key={kind} className="rounded-lg border border-slate-800 bg-slate-900 p-3.5 sm:p-4 hover-scale hover:border-slate-700">
+              <span className={`flex size-8 sm:size-9 items-center justify-center rounded-md ${kindColors[kind]} text-white shadow-sm`}>
                 <Icon size={16} />
               </span>
               <p className="mt-3 sm:mt-4 text-xs sm:text-sm font-medium text-white">{label}</p>
@@ -425,7 +430,7 @@ function PreviewCard() {
   const [editableText, setEditableText] = useState('Apache Tika is a toolkit for detecting and extracting metadata...');
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4 shadow-2xl overflow-hidden">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4 shadow-2xl overflow-hidden hover-scale">
       <div className="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
         <div className="flex items-center gap-2">
           <ScanLine size={15} className="text-indigo-400 shrink-0" />
@@ -437,7 +442,7 @@ function PreviewCard() {
       <div className="mt-3 grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
         
         {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (RENDERIZADO CANVAS CON PDF.JS DEL MISMO PDF REAL) */}
-        <div className="rounded border border-slate-700 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+        <div className="rounded border border-slate-700 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden transition-all">
           <div>
             <div className="flex justify-between items-center text-[7px] font-mono text-slate-400 pb-1 border-b border-slate-800">
               <span className="truncate max-w-[90px] font-semibold text-slate-300">10_Tika_Test_Sample.pdf</span>
@@ -457,7 +462,7 @@ function PreviewCard() {
         </div>
 
         {/* HOJA DERECHA: MISMO PDF REAL CON PDF.JS + CAPA DE CAMPOS EDITABLES LLENABLES */}
-        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden">
+        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden transition-all">
           <div>
             <div className="flex justify-between items-center text-[7px] font-mono text-emerald-400 pb-1 border-b border-slate-800 font-semibold">
               <span className="truncate max-w-[90px]">10_Tika_Test_Sample.pdf</span>
@@ -473,7 +478,7 @@ function PreviewCard() {
                     type="text"
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="w-full bg-indigo-950/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7.5px] font-bold shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                    className="w-full bg-indigo-950/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7.5px] font-bold shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 transition-all"
                     title="Editar Título"
                   />
                 </div>
@@ -484,7 +489,7 @@ function PreviewCard() {
                     rows={2}
                     value={editableText}
                     onChange={(e) => setEditableText(e.target.value)}
-                    className="w-full bg-slate-950/95 border border-indigo-400 text-indigo-200 rounded px-1.5 py-0.5 text-[7px] shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 leading-tight"
+                    className="w-full bg-slate-950/95 border border-indigo-400 text-indigo-200 rounded px-1.5 py-0.5 text-[7px] shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 leading-tight transition-all"
                     title="Editar Descripción"
                   />
                 </div>
@@ -494,13 +499,13 @@ function PreviewCard() {
                   <input
                     type="date"
                     defaultValue="2007-03-22"
-                    className="bg-slate-950/95 border border-emerald-400 text-emerald-200 rounded px-1 text-[7px] font-mono shadow-md"
+                    className="bg-slate-950/95 border border-emerald-400 text-emerald-200 rounded px-1 text-[7px] font-mono shadow-md transition-all"
                   />
                 </div>
 
                 {/* CAMPO EDITABLE 4: FIRMA MANUSCRITA SOBRE EL PIE DEL PDF */}
                 <div className="absolute bottom-[10%] right-[10%] z-20">
-                  <button className="bg-indigo-900/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7px] font-medium shadow-md hover:bg-indigo-800 transition-colors">
+                  <button className="bg-indigo-900/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7px] font-medium shadow-md hover:bg-indigo-800 hover-scale">
                     ✍️ Firma Aprobación PMC
                   </button>
                 </div>
@@ -525,8 +530,8 @@ function PreviewCard() {
 
 function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div>
-      <span className="flex size-9 items-center justify-center rounded-md border border-slate-800 text-indigo-400 bg-slate-900">
+    <div className="hover-scale">
+      <span className="flex size-9 items-center justify-center rounded-md border border-slate-800 text-indigo-400 bg-slate-900 shadow-sm">
         {icon}
       </span>
       <h2 className="mt-3 sm:mt-4 font-medium text-white text-base sm:text-lg">{title}</h2>
@@ -555,7 +560,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
     <main className="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-8 min-h-[calc(100vh-4rem)] flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-3 sm:mb-5">
-          <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white flex items-center">
+          <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white flex items-center hover-scale">
             <ArrowLeft size={15} className="mr-1 inline" /> Volver al inicio
           </button>
           
@@ -563,13 +568,13 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
           <div className="relative sm:hidden">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-indigo-300 font-medium"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-indigo-300 font-medium hover-scale"
             >
               Paso {step + 1}: {current.title} <ChevronDown size={14} />
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-9 z-50 w-60 max-h-64 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900 p-2 shadow-2xl">
+              <div className="absolute right-0 top-9 z-50 w-60 max-h-64 overflow-y-auto rounded-lg border border-indigo-500/40 bg-slate-900 p-2 shadow-2xl animate-dropdown">
                 {tutorialSteps.map((item, i) => (
                   <button
                     key={item.title}
@@ -604,10 +609,10 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                     onClick={() => setStep(i)}
                     className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition-all ${
                       isActive
-                        ? 'bg-indigo-600 text-white font-semibold shadow-md ring-1 ring-indigo-400'
+                        ? 'bg-indigo-600 text-white font-semibold shadow-md ring-1 ring-indigo-400 hover-scale'
                         : i < step
-                        ? 'text-slate-300 hover:bg-slate-800/80'
-                        : 'text-slate-400 hover:bg-slate-800/40'
+                        ? 'text-slate-300 hover:bg-slate-800/80 hover-scale'
+                        : 'text-slate-400 hover:bg-slate-800/40 hover-scale'
                     }`}
                   >
                     <span
@@ -635,7 +640,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                 <button
                   disabled={step === 0}
                   onClick={() => setStep(step - 1)}
-                  className="rounded-md border border-slate-800 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800"
+                  className="rounded-md border border-slate-800 p-2 text-slate-300 disabled:opacity-30 hover:bg-slate-800 hover-scale"
                   title="Paso Anterior"
                 >
                   <ChevronLeft size={16} />
@@ -643,7 +648,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                 <button
                   disabled={step === tutorialSteps.length - 1}
                   onClick={() => setStep(step + 1)}
-                  className="rounded-md bg-indigo-600 p-2 text-white disabled:opacity-30 hover:bg-indigo-500 shadow-sm"
+                  className="rounded-md bg-indigo-600 p-2 text-white disabled:opacity-30 hover:bg-indigo-500 shadow-sm btn-glow"
                   title="Siguiente Paso"
                 >
                   <ChevronRight size={16} />
@@ -652,7 +657,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
             </div>
 
             <div className="grid gap-5 xl:grid-cols-[1fr_260px]">
-              <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-6 shadow-xl flex flex-col justify-between min-h-[360px]">
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-6 shadow-xl flex flex-col justify-between min-h-[360px] animate-pop-in">
                 <div>
                   <div className="flex items-center gap-3">
                     <span className="flex size-9 items-center justify-center rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-400">
@@ -670,15 +675,15 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                       {current.whatHappens}
                     </p>
                     <div className="mt-4 grid gap-2.5 grid-cols-1 sm:grid-cols-3">
-                      <div className="rounded-md border border-slate-800 bg-slate-900 p-2.5">
+                      <div className="rounded-md border border-slate-800 bg-slate-900 p-2.5 hover-scale">
                         <p className="text-[10px] text-slate-400">Entrada</p>
                         <p className="mt-0.5 text-xs font-medium text-white truncate">{current.input}</p>
                       </div>
-                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-2.5">
+                      <div className="rounded-md border border-indigo-500/50 bg-indigo-500/10 p-2.5 hover-scale">
                         <p className="text-[10px] text-indigo-400">Acción</p>
                         <p className="mt-0.5 text-xs font-medium text-white truncate">{current.action}</p>
                       </div>
-                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-2.5">
+                      <div className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-2.5 hover-scale">
                         <p className="text-[10px] text-emerald-400">Resultado</p>
                         <p className="mt-0.5 text-xs font-medium text-white truncate">{current.output}</p>
                       </div>
@@ -690,21 +695,21 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
                   <button
                     disabled={step === 0}
                     onClick={() => setStep(step - 1)}
-                    className="rounded-md border border-slate-800 px-3.5 py-2 text-xs font-medium text-slate-300 disabled:opacity-30 hover:bg-slate-800 flex items-center gap-1"
+                    className="rounded-md border border-slate-800 px-3.5 py-2 text-xs font-medium text-slate-300 disabled:opacity-30 hover:bg-slate-800 flex items-center gap-1 hover-scale"
                   >
                     <ChevronLeft size={15} /> Anterior
                   </button>
                   {step === tutorialSteps.length - 1 ? (
                     <button
                       onClick={start}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1 btn-glow"
                     >
                       Probar DocScan <ArrowRight size={15} />
                     </button>
                   ) : (
                     <button
                       onClick={() => setStep(step + 1)}
-                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow-md flex items-center gap-1 btn-glow"
                     >
                       Siguiente ({step + 2}/20) <ChevronRight size={15} />
                     </button>
@@ -713,7 +718,7 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
               </div>
 
               {/* DYNAMIC EXPECTED RESULT ASIDE */}
-              <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 flex flex-col justify-between">
+              <aside className="rounded-xl border border-slate-800 bg-slate-900 p-4 flex flex-col justify-between animate-pop-in">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Resultado esperado</p>
                   <div className="mt-3 rounded-md border border-slate-800 bg-slate-950 p-3">
@@ -748,11 +753,11 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
 
 function LoginModal({ close }: { close: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 sm:p-5">
-      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 sm:p-5 animate-page-in">
+      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-5 sm:p-6 shadow-2xl animate-pop-in">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex size-9 items-center justify-center rounded-md bg-indigo-600 text-white">
+            <div className="flex size-9 items-center justify-center rounded-md bg-indigo-600 text-white shadow-md">
               <LockKeyhole size={17} />
             </div>
             <h2 className="mt-4 sm:mt-5 text-lg sm:text-xl font-semibold text-white">Inicia sesión cuando quieras</h2>
@@ -760,17 +765,17 @@ function LoginModal({ close }: { close: () => void }) {
               Es opcional. Guarda tus plantillas y vuelve a ellas desde cualquier dispositivo.
             </p>
           </div>
-          <button onClick={close} aria-label="Cerrar" className="rounded-md p-2 hover:bg-slate-800 text-slate-400">
+          <button onClick={close} aria-label="Cerrar" className="rounded-md p-2 hover:bg-slate-800 text-slate-400 hover-scale">
             <X size={17} />
           </button>
         </div>
         <button
           onClick={close}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-slate-700 px-4 py-2.5 text-xs sm:text-sm font-medium hover:bg-slate-800 text-white"
+          className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-slate-700 px-4 py-2.5 text-xs sm:text-sm font-medium hover:bg-slate-800 text-white hover-scale btn-glow"
         >
           <LockKeyhole size={16} /> Continuar con Google
         </button>
-        <button onClick={close} className="mt-3 w-full text-xs text-slate-400 hover:text-white">
+        <button onClick={close} className="mt-3 w-full text-xs text-slate-400 hover:text-white hover-scale">
           Continuar como invitado
         </button>
       </div>

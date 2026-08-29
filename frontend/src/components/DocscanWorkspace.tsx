@@ -179,26 +179,28 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
 
         <div className="flex items-center gap-3">
           <span className="hidden items-center gap-2 text-xs text-slate-400 sm:flex">
-            <i className="size-2 rounded-full bg-emerald-500" /> API REST Conectada (FastAPI)
+            <i className="size-2 rounded-full bg-emerald-500 animate-pulse" /> API REST Conectada (FastAPI)
           </span>
           <button
             aria-label="Notificaciones"
             onClick={() => setNotice(!notice)}
-            className="relative rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="relative rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white hover-scale transition-all"
           >
             <Bell size={18} />
             {notice && (
-              <div className="absolute right-0 top-10 z-20 w-64 rounded-lg border border-slate-800 bg-slate-900 p-3 text-left text-xs shadow-xl">
-                <p className="font-medium text-white">Servicios Operativos</p>
+              <div className="absolute right-0 top-10 z-20 w-64 rounded-lg border border-indigo-500/40 bg-slate-900 p-3 text-left text-xs shadow-2xl animate-dropdown">
+                <p className="font-medium text-white flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-indigo-400" /> Servicios Operativos
+                </p>
                 <p className="mt-1 text-slate-400">Servidor FastAPI en puerto 8000 en línea.</p>
               </div>
             )}
           </button>
           <button
             onClick={back}
-            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover-scale"
           >
-            ← Volver a Cargar
+            ← Volver al Inicio
           </button>
           <div className="flex size-8 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-indigo-400 border border-slate-700">
             AG
@@ -286,7 +288,7 @@ export function DocscanWorkspace({ initialFile, initialSampleData, back }: Docsc
             </div>
           </div>
 
-          <div className="p-5 sm:p-8">
+          <div key={step} className="p-5 sm:p-8 animate-page-in">
             {step === 1 && (
               <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
                 <div className="space-y-5">
