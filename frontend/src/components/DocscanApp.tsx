@@ -373,8 +373,8 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
           </button>
         </div>
 
-        {/* TARJETA PRESENTACIÓN LOGO OFICIAL DOCSCAN INTELIGENTE */}
-        <LogoHeroCard start={start} />
+        {/* LOGO OFICIAL EXCLUSIVO DE DOCSCAN INTELIGENTE */}
+        <LogoHeroCard />
       </section>
 
       <section className="border-y border-slate-800 bg-slate-900/40">
@@ -423,53 +423,20 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
   );
 }
 
-function LogoHeroCard({ start }: { start: () => void }) {
+function LogoHeroCard() {
   return (
-    <div className="relative rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-6 sm:p-8 shadow-2xl overflow-hidden hover-scale group">
+    <div className="relative flex items-center justify-center rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-4 sm:p-6 shadow-2xl overflow-hidden hover-scale group">
       {/* Background ambient glow */}
       <div className="absolute -right-16 -top-16 size-64 rounded-full bg-indigo-600/15 blur-3xl group-hover:bg-indigo-500/25 transition-all duration-500" />
       <div className="absolute -left-16 -bottom-16 size-64 rounded-full bg-cyan-600/15 blur-3xl group-hover:bg-cyan-500/25 transition-all duration-500" />
 
-      <div className="relative z-10 flex flex-col items-center text-center">
-        {/* Brand Logo Image */}
-        <div className="relative size-36 sm:size-44 rounded-2xl p-1 bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 shadow-2xl hover-scale">
-          <img
-            src="/docscan_logo.jpg"
-            alt="DocScan Inteligente Logo"
-            className="size-full object-cover rounded-xl"
-          />
-        </div>
-
-        <div className="mt-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-            <Sparkles size={13} className="text-cyan-400" /> Sistema de Ingestión & Visión Artificial 2026
-          </span>
-          <h3 className="mt-3 text-xl sm:text-2xl font-bold tracking-tight text-white">
-            DocScan <span className="text-indigo-400">Inteligente</span>
-          </h3>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-sm">
-            Digitalización inteligente de documentos con preservación exacta de apariencia y creación automática de formularios interactivos.
-          </p>
-        </div>
-
-        <div className="mt-6 flex flex-wrap justify-center gap-2 text-[11px]">
-          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
-            PDF.js High-DPI
-          </span>
-          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
-            FastAPI REST
-          </span>
-          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
-            AcroForm Engine
-          </span>
-        </div>
-
-        <button
-          onClick={start}
-          className="mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:from-indigo-500 hover:to-cyan-500 transition-all btn-glow"
-        >
-          🚀 Abrir Workspace de Trabajo
-        </button>
+      {/* Brand Logo Image Only */}
+      <div className="relative w-full max-w-md aspect-square rounded-2xl p-1 bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 shadow-2xl hover-scale">
+        <img
+          src="/docscan_logo.jpg"
+          alt="DocScan Inteligente Logo"
+          className="size-full object-cover rounded-xl"
+        />
       </div>
     </div>
   );
