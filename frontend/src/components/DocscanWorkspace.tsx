@@ -398,21 +398,26 @@ function DocumentPreview({
         </div>
       </div>
 
-      <div className="mt-4 rounded border border-slate-800 bg-slate-950 p-4 min-h-64 flex flex-col items-center justify-center">
+      <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-2 min-h-[500px]">
         {isProcessing ? (
-          <div className="text-center py-8">
-            <div className="mx-auto flex size-10 items-center justify-center rounded-lg bg-indigo-600/20 text-indigo-400">
-              <Sparkles size={20} className="animate-spin" />
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400">
+              <Sparkles size={24} className="animate-spin" />
             </div>
-            <p className="mt-3 text-xs font-medium text-white">Analizando estructura y texto del documento...</p>
+            <p className="mt-4 text-sm font-medium text-white">Analizando estructura y texto vectorial del documento...</p>
           </div>
         ) : (
-          <div className="w-full flex flex-col items-center">
-            {/* Render real PDF if sample/pdf, else text preview */}
-            <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.55} className="max-h-[320px] rounded shadow-lg" />
-            
-            <p className="mt-3 text-xs text-slate-400 font-mono text-center">
-              Vista previa verificada de <span className="text-slate-200 font-semibold">{fileName}</span> ({totalPages} {totalPages === 1 ? 'página' : 'páginas'})
+          <div className="w-full">
+            <RealPdfViewer
+              url="/sample_tika.pdf"
+              pageNum={1}
+              scale={0.85}
+              showToolbar={true}
+              totalPages={totalPages}
+              className="h-[520px] w-full"
+            />
+            <p className="mt-2 text-xs text-slate-400 font-mono text-center">
+              Vista previa vectorial de <span className="text-slate-200 font-semibold">{fileName}</span> ({totalPages} {totalPages === 1 ? 'página' : 'páginas'})
             </p>
           </div>
         )}
@@ -576,41 +581,53 @@ function Study({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
         {/* Canvas Display */}
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 min-h-[460px]">
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 min-h-[580px] shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-            <span className="text-xs font-semibold text-slate-300">Visor de Comparación Fiel · {fileName} ({fileType})</span>
+            <span className="text-xs font-semibold text-slate-300">Navegador Fiel de PDF · {fileName} ({fileType})</span>
             <span className="text-[10px] text-emerald-400 font-mono">Página {currentPage} de {totalPages}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 min-h-[380px]">
+          <div className={`grid gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 ${viewMode === 'split' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
             {/* Sheet 1: Original Document */}
-            <div className="rounded border border-slate-800 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] overflow-hidden select-none">
-              <div>
-                <div className="flex justify-between items-center text-[8px] font-mono text-slate-400 pb-1 border-b border-slate-800">
-                  <span className="truncate max-w-[110px] font-semibold text-slate-300">{fileName}</span>
-                  <span className="text-indigo-400">Original Intacto</span>
+            {(viewMode === 'split' || viewMode === 'original') && (
+              <div className="rounded-lg border border-slate-800 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between h-[580px] select-none">
+                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 pb-1.5 border-b border-slate-800">
+                  <span className="truncate max-w-[140px] font-semibold text-slate-300">{fileName}</span>
+                  <span className="text-indigo-400 font-medium">Hoja Original Preservada</span>
                 </div>
-                <div className="mt-2 flex justify-center">
-                  <RealPdfViewer url="/sample_tika.pdf" pageNum={currentPage} scale={0.48} className="max-h-[300px]" />
+                <div className="mt-2 flex-1 overflow-hidden">
+                  <RealPdfViewer
+                    url="/sample_tika.pdf"
+                    pageNum={currentPage}
+                    scale={0.72}
+                    showToolbar={true}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    className="h-full w-full"
+                  />
                 </div>
               </div>
-              <div className="text-[7px] text-slate-400 border-t border-slate-800 pt-1 flex justify-between">
-                <span>PÁGINA {currentPage} ORIGINAL</span>
-                <span>SIN MODIFICAR</span>
-              </div>
-            </div>
+            )}
 
             {/* Sheet 2: Interactive Template */}
-            <div className="rounded border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] overflow-hidden select-none">
-              <div>
-                <div className="flex justify-between items-center text-[8px] font-mono text-emerald-400 pb-1 border-b border-slate-800 font-semibold">
-                  <span className="truncate max-w-[110px]">{fileName}</span>
-                  <span className="text-emerald-400">Plantilla Editable</span>
+            {(viewMode === 'split' || viewMode === 'editable') && (
+              <div className="rounded-lg border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between h-[580px] select-none">
+                <div className="flex justify-between items-center text-[10px] font-mono text-emerald-400 pb-1.5 border-b border-slate-800 font-semibold">
+                  <span className="truncate max-w-[140px]">{fileName}</span>
+                  <span className="text-emerald-400">Hoja Plantilla Interactiva ({pageZones.length} campos)</span>
                 </div>
-                <div className="mt-2 flex justify-center">
-                  <RealPdfViewer url="/sample_tika.pdf" pageNum={currentPage} scale={0.48} className="max-h-[300px]">
+                <div className="mt-2 flex-1 overflow-hidden">
+                  <RealPdfViewer
+                    url="/sample_tika.pdf"
+                    pageNum={currentPage}
+                    scale={0.72}
+                    showToolbar={true}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    className="h-full w-full"
+                  >
                     {pageZones.map((z) => (
                       <div
                         key={z.id}
@@ -621,12 +638,12 @@ function Study({
                           width: `${z.w}%`,
                           height: `${z.h}%`,
                         }}
-                        className={`absolute z-20 cursor-pointer rounded border px-1 py-0.5 text-[7px] font-medium transition-all ${
+                        className={`absolute z-20 cursor-pointer rounded border px-1.5 py-0.5 text-[8px] font-medium transition-all ${
                           selected === z.id
-                            ? 'border-indigo-400 bg-indigo-950/90 text-white ring-2 ring-indigo-400 shadow-lg'
+                            ? 'border-indigo-400 bg-indigo-950/95 text-white ring-2 ring-indigo-400 shadow-xl'
                             : z.type === 'Estatico'
-                            ? 'border-emerald-500/80 bg-emerald-950/80 text-emerald-200'
-                            : 'border-slate-600 bg-slate-950/80 text-slate-200'
+                            ? 'border-emerald-500/80 bg-emerald-950/85 text-emerald-200'
+                            : 'border-slate-600 bg-slate-950/85 text-slate-200'
                         }`}
                       >
                         <span className="block truncate font-bold">{z.label}</span>
@@ -635,11 +652,7 @@ function Study({
                   </RealPdfViewer>
                 </div>
               </div>
-              <div className="text-[7px] text-emerald-400 border-t border-slate-800 pt-1 flex justify-between font-medium">
-                <span>PÁGINA {currentPage} EDITABLE</span>
-                <span>{pageZones.length} CAMPOS</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
