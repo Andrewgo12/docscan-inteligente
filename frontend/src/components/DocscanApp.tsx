@@ -234,9 +234,7 @@ export function DocscanApp() {
       {/* Header Responsivo */}
       <header className="sticky top-0 z-40 flex h-14 sm:h-16 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur px-4 sm:px-8">
         <button onClick={() => go('home')} className="flex items-center gap-2.5 sm:gap-3 hover-scale">
-          <span className="flex size-7 sm:size-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
-            <ScanLine size={16} className="sm:size-[17px]" />
-          </span>
+          <img src="/docscan_logo.jpg" alt="DocScan Logo" className="size-8 sm:size-9 rounded-lg object-cover border border-indigo-500/40 shadow-sm" />
           <span className="font-semibold text-sm sm:text-base tracking-tight text-white">
             DocScan <span className="font-normal text-slate-400">Inteligente</span>
           </span>
@@ -375,8 +373,8 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
           </button>
         </div>
 
-        {/* DEMOSTRACIÓN VISUAL SIDE-BY-SIDE REAL (RENDERIZADO AMBOS CON PDF.JS NATIVO) */}
-        <PreviewCard />
+        {/* TARJETA PRESENTACIÓN LOGO OFICIAL DOCSCAN INTELIGENTE */}
+        <LogoHeroCard start={start} />
       </section>
 
       <section className="border-y border-slate-800 bg-slate-900/40">
@@ -425,104 +423,53 @@ function Landing({ start, how, login }: { start: () => void; how: () => void; lo
   );
 }
 
-function PreviewCard() {
-  const [editableTitle, setEditableTitle] = useState('Tika - Content Analysis Toolkit 2026');
-  const [editableText, setEditableText] = useState('Apache Tika is a toolkit for detecting and extracting metadata...');
-
+function LogoHeroCard({ start }: { start: () => void }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4 shadow-2xl overflow-hidden hover-scale">
-      <div className="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
-        <div className="flex items-center gap-2">
-          <ScanLine size={15} className="text-indigo-400 shrink-0" />
-          <span className="text-xs font-semibold text-slate-200">Demostración Lado a Lado (Renderizado PDF.js Real)</span>
-        </div>
-        <span className="text-[10px] text-emerald-400 font-medium">100% Fidelidad al Impreso</span>
-      </div>
+    <div className="relative rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-6 sm:p-8 shadow-2xl overflow-hidden hover-scale group">
+      {/* Background ambient glow */}
+      <div className="absolute -right-16 -top-16 size-64 rounded-full bg-indigo-600/15 blur-3xl group-hover:bg-indigo-500/25 transition-all duration-500" />
+      <div className="absolute -left-16 -bottom-16 size-64 rounded-full bg-cyan-600/15 blur-3xl group-hover:bg-cyan-500/25 transition-all duration-500" />
 
-      <div className="mt-3 grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
-        
-        {/* HOJA IZQUIERDA: DOCUMENTO ORIGINAL PDF (RENDERIZADO CANVAS CON PDF.JS DEL MISMO PDF REAL) */}
-        <div className="rounded border border-slate-700 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden transition-all">
-          <div>
-            <div className="flex justify-between items-center text-[7px] font-mono text-slate-400 pb-1 border-b border-slate-800">
-              <span className="truncate max-w-[90px] font-semibold text-slate-300">10_Tika_Test_Sample.pdf</span>
-              <span className="text-indigo-400">PDF.js Original</span>
-            </div>
-
-            {/* RENDERIZADO CANVAS CON PDF.JS DEL PDF REAL ORIGINAL */}
-            <div className="mt-2 flex justify-center">
-              <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.44} className="max-h-[220px]" />
-            </div>
-          </div>
-
-          <div className="text-[6.5px] text-slate-400 border-t border-slate-800 pt-1 flex justify-between">
-            <span>HOJA 1: PDF ORIGINAL INTACTO</span>
-            <span className="text-slate-400">Sin Modificaciones</span>
-          </div>
+      <div className="relative z-10 flex flex-col items-center text-center">
+        {/* Brand Logo Image */}
+        <div className="relative size-36 sm:size-44 rounded-2xl p-1 bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 shadow-2xl hover-scale">
+          <img
+            src="/docscan_logo.jpg"
+            alt="DocScan Inteligente Logo"
+            className="size-full object-cover rounded-xl"
+          />
         </div>
 
-        {/* HOJA DERECHA: MISMO PDF REAL CON PDF.JS + CAPA DE CAMPOS EDITABLES LLENABLES */}
-        <div className="rounded border border-emerald-900/80 bg-slate-900 p-2 text-slate-100 flex flex-col justify-between aspect-[0.7] select-none overflow-hidden transition-all">
-          <div>
-            <div className="flex justify-between items-center text-[7px] font-mono text-emerald-400 pb-1 border-b border-slate-800 font-semibold">
-              <span className="truncate max-w-[90px]">10_Tika_Test_Sample.pdf</span>
-              <span className="text-emerald-400">PDF.js + Campos Editables</span>
-            </div>
-
-            {/* RENDERIZADO CANVAS CON PDF.JS DEL MISMO PDF REAL CON CAPA SUPERPUESTA EDITABLE */}
-            <div className="mt-2 flex justify-center">
-              <RealPdfViewer url="/sample_tika.pdf" pageNum={1} scale={0.44} className="max-h-[220px]">
-                {/* CAMPO EDITABLE 1: SOBRE EL TÍTULO DEL PDF */}
-                <div className="absolute top-[14%] left-[10%] right-[10%] z-20">
-                  <input
-                    type="text"
-                    value={editableTitle}
-                    onChange={(e) => setEditableTitle(e.target.value)}
-                    className="w-full bg-indigo-950/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7.5px] font-bold shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 transition-all"
-                    title="Editar Título"
-                  />
-                </div>
-
-                {/* CAMPO EDITABLE 2: SOBRE EL PARRAFO DEL PDF */}
-                <div className="absolute top-[28%] left-[10%] right-[10%] z-20">
-                  <textarea
-                    rows={2}
-                    value={editableText}
-                    onChange={(e) => setEditableText(e.target.value)}
-                    className="w-full bg-slate-950/95 border border-indigo-400 text-indigo-200 rounded px-1.5 py-0.5 text-[7px] shadow-lg focus:outline-none focus:ring-1 focus:ring-indigo-300 leading-tight transition-all"
-                    title="Editar Descripción"
-                  />
-                </div>
-
-                {/* CAMPO EDITABLE 3: SELECTOR DE FECHA SOBRE EL BLOQUE DE NOTICIAS */}
-                <div className="absolute bottom-[28%] left-[10%] z-20">
-                  <input
-                    type="date"
-                    defaultValue="2007-03-22"
-                    className="bg-slate-950/95 border border-emerald-400 text-emerald-200 rounded px-1 text-[7px] font-mono shadow-md transition-all"
-                  />
-                </div>
-
-                {/* CAMPO EDITABLE 4: FIRMA MANUSCRITA SOBRE EL PIE DEL PDF */}
-                <div className="absolute bottom-[10%] right-[10%] z-20">
-                  <button className="bg-indigo-900/95 border border-indigo-400 text-indigo-100 rounded px-1.5 py-0.5 text-[7px] font-medium shadow-md hover:bg-indigo-800 hover-scale">
-                    ✍️ Firma Aprobación PMC
-                  </button>
-                </div>
-              </RealPdfViewer>
-            </div>
-          </div>
-
-          <div className="text-[6.5px] text-emerald-400 border-t border-slate-800 pt-1 flex justify-between font-medium">
-            <span>HOJA 2: MISMO PDF + CONTROLES LLENABLES</span>
-            <span className="text-emerald-300">100% Interactivo</span>
-          </div>
+        <div className="mt-6">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+            <Sparkles size={13} className="text-cyan-400" /> Sistema de Ingestión & Visión Artificial 2026
+          </span>
+          <h3 className="mt-3 text-xl sm:text-2xl font-bold tracking-tight text-white">
+            DocScan <span className="text-indigo-400">Inteligente</span>
+          </h3>
+          <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-sm">
+            Digitalización inteligente de documentos con preservación exacta de apariencia y creación automática de formularios interactivos.
+          </p>
         </div>
 
-      </div>
+        <div className="mt-6 flex flex-wrap justify-center gap-2 text-[11px]">
+          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
+            PDF.js High-DPI
+          </span>
+          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
+            FastAPI REST
+          </span>
+          <span className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1 text-slate-300 font-mono">
+            AcroForm Engine
+          </span>
+        </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 px-1">
-        <Check size={14} className="text-emerald-400 shrink-0" /> Renderizado con PDF.js en ambas hojas: El archivo PDF fuente se conserva intacto a la izquierda y se vuelve 100% editable a la derecha.
+        <button
+          onClick={start}
+          className="mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:from-indigo-500 hover:to-cyan-500 transition-all btn-glow"
+        >
+          🚀 Abrir Workspace de Trabajo
+        </button>
       </div>
     </div>
   );
