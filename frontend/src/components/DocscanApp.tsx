@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, Info, LockKeyhole, Menu, MousePointer2, Play, ScanLine, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { DocscanWorkspace, SampleDocData } from './DocscanWorkspace';
 import { RealPdfViewer } from './RealPdfViewer';
 
-type View = 'home' | 'how' | 'loading' | 'upload' | 'workspace';
+type View = 'home' | 'how' | 'workspace';
 type Kind = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'JPG';
 
 const kindColors: Record<Kind, string> = {
@@ -226,18 +226,7 @@ export function DocscanApp() {
 
   const go = (next: View) => {
     setMobileMenuOpen(false);
-    if (next === 'loading') {
-      setView('loading');
-      window.setTimeout(() => setView('upload'), 900);
-    } else {
-      setView(next);
-    }
-  };
-
-  const handleSelectedFile = (file: File) => {
-    setActiveFile(file);
-    setActiveSampleData(null);
-    setView('workspace');
+    setView(next);
   };
 
   return (
@@ -339,11 +328,9 @@ export function DocscanApp() {
         </div>
       )}
 
-      {view === 'home' && <Landing start={() => go('loading')} how={() => go('how')} login={() => setLogin(true)} />}
-      {view === 'how' && <How start={() => go('loading')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
-      {view === 'loading' && <Loading />}
-      {view === 'upload' && <UploadView start={(f) => handleSelectedFile(f)} back={() => go('home')} />}
-      {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('upload')} />}
+      {view === 'home' && <Landing start={() => go('workspace')} how={() => go('how')} login={() => setLogin(true)} />}
+      {view === 'how' && <How start={() => go('workspace')} back={() => go('home')} step={howStep} setStep={setHowStep} />}
+      {view === 'workspace' && <DocscanWorkspace initialFile={activeFile} initialSampleData={activeSampleData} back={() => go('home')} />}
 
       {login && <LoginModal close={() => setLogin(false)} />}
     </div>
@@ -753,85 +740,6 @@ function How({ start, back, step, setStep }: { start: () => void; back: () => vo
               </aside>
             </div>
           </section>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function Loading() {
-  return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 sm:px-6">
-      <div className="text-center">
-        <div className="mx-auto flex size-12 sm:size-14 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-indigo-400">
-          <ScanLine size={24} />
-        </div>
-        <h1 className="mt-5 sm:mt-6 text-xl sm:text-2xl font-semibold text-white">Preparando tu espacio</h1>
-        <p className="mt-2 text-xs sm:text-sm text-slate-400">Configurando herramientas de carga y revisión…</p>
-        <div className="mx-auto mt-5 sm:mt-6 h-1 w-40 sm:w-48 overflow-hidden rounded bg-slate-800">
-          <div className="h-full w-2/3 animate-pulse bg-indigo-500" />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function UploadView({ start, back }: { start: (file: File) => void; back: () => void }) {
-  const [dragOver, setDragOver] = useState(false);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      start(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      start(e.target.files[0]);
-    }
-  };
-
-  return (
-    <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-12">
-      <button onClick={back} className="text-xs sm:text-sm text-slate-400 hover:text-white mb-4 sm:mb-6">
-        <ArrowLeft size={15} className="mr-1 inline" /> Inicio
-      </button>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Paso 1 · Ingestión</p>
-        <h1 className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white">Carga tu documento</h1>
-        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-400">Primero podrás leerlo y verificarlo; después indicarás qué debe cambiar.</p>
-      </div>
-
-      <div className="mt-6 sm:mt-8 grid gap-5 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-4">
-          <label
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            className={`flex min-h-60 sm:min-h-80 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed transition-all p-6 sm:p-8 text-center ${
-              dragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:border-slate-500'
-            }`}
-          >
-            <Upload size={28} className="text-indigo-400" />
-            <span className="mt-3 sm:mt-4 font-medium text-sm sm:text-base text-white">Arrastra un archivo aquí</span>
-            <span className="mt-1.5 sm:mt-2 text-xs text-slate-400">DOCX, PDF, XLSX, PPTX o imagen · máximo 25 MB</span>
-            <input className="sr-only" type="file" accept=".docx,.pdf,.xlsx,.pptx,image/*" onChange={handleFileChange} />
-          </label>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
-          <p className="text-xs text-slate-400">Formatos compatibles</p>
-          {formats.map(({ kind, label, icon: Icon }) => (
-            <div key={kind} className="mt-3 sm:mt-4 flex items-center gap-3">
-              <span className={`flex size-7 sm:size-8 items-center justify-center rounded ${kindColors[kind]} text-white`}>
-                <Icon size={14} />
-              </span>
-              <span className="text-xs sm:text-sm text-slate-200">{label}</span>
-            </div>
-          ))}
         </div>
       </div>
     </main>
